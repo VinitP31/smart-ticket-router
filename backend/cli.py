@@ -15,11 +15,18 @@ def main() -> None:
     else:
         ticket = input("Enter a support ticket: ")
 
+    debug = {}
     start = time.perf_counter()
-    result = route_ticket(ticket)
+    result = route_ticket(ticket, debug=debug)
     elapsed_ms = round((time.perf_counter() - start) * 1000)
 
-    print(f"\n{len(result['issues'])} issue(s) detected:\n")
+    print(f"\nWord count: {debug.get('word_count', 0)}")
+    if debug.get("was_summarized"):
+        print("Ticket exceeded 300 words — summarized before routing.")
+        print("Summary sent to the router:")
+        print(f"  {debug['summary']}\n")
+
+    print(f"{len(result['issues'])} issue(s) detected:\n")
     for issue in result["issues"]:
         print(f"  [{issue['id']}] {issue['category']}")
         print(f"      Priority     : {issue['priority']}")
