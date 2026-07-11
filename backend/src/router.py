@@ -51,14 +51,34 @@ def _assemble(model_output: RoutingModelOutput) -> dict:
     return {"issues": issues}
 
 
-def route_ticket(raw_ticket: str) -> dict:
+def route_ticket(raw_ticket: str, debug: dict | None = None) -> dict:
+    """Public entry point. Wraps _route in a final safety net so a bug
+    anywhere in the pipeline can never surface as a 5xx to the caller.
+
+    `debug`, if passed a dict, gets populated with pipeline internals
+    (e.g. the summarized text) for CLI/demo inspection. The API layer
+    (main.py) never passes this — the response contract is unaffected."""
+    try:
+        return _route(raw_ticket, debug)
+    except Exception as e:
+        return fallback_route(f"unexpected internal error: {type(e).__name__}")
+
+
+def _route(raw_ticket: str, debug: dict | None = None) -> dict:
     text = redact_pii((raw_ticket or "").strip())
     if not text:
         return fallback_route("empty ticket")
 
-    if _word_count(text) > _LONG_TICKET_WORD_THRESHOLD:
+    was_long = _word_count(text) > _LONG_TICKET_WORD_THRESHOLD
+    if debug is not None:
+        debug["word_count"] = _word_count(text)
+        debug["was_summarized"] = was_long
+
+    if was_long:
         try:
             text = summarize_ticket(text)
+            if debug is not None:
+                debug["summary"] = text
         except LLMAuthError:
             return fallback_route("authentication failed during summarization")
         except LLMServiceError:

@@ -61,6 +61,13 @@ def _call_with_retries(messages: list[dict], json_mode: bool = False) -> str:
             last_error = e
             if attempt < _MAX_TRANSIENT_RETRIES:
                 time.sleep(_RETRY_BACKOFF_SECONDS * (attempt + 1))
+        except Exception as e:
+            # Any other provider error (bad request, model not found, provider's
+            # own 500, or anything unforeseen) is not worth retrying — a
+            # malformed request won't fix itself. Fail fast to the fallback
+            # instead of leaking an unhandled exception up to the API layer.
+            last_error = e
+            break
     raise LLMServiceError(str(last_error))
 
 
