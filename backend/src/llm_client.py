@@ -78,7 +78,7 @@ def classify_ticket(redacted_text: str, repair_note: str | None = None) -> str:
     messages += _few_shot_messages()
     user_content = redacted_text
     if repair_note:
-        user_content = f"{redacted_text}\n\n(Your previous output failed validation: {repair_note}; return ONLY valid JSON with an \"issues\" array.)"
+        user_content = f'{redacted_text}\n\n(Your previous output failed validation: {repair_note}; return ONLY valid JSON with an "issues" array.)'
     messages.append({"role": "user", "content": user_content})
     return _call_with_retries(messages, json_mode=True)
 

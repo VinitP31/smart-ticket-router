@@ -18,7 +18,9 @@ def test_ticket_matches_contract(ticket):
     resp = route_ticket(ticket["ticket"])
     assert resp["issues"], f"{ticket['id']}: empty issues array"
     for issue in resp["issues"]:
-        assert REQUIRED_FIELDS <= set(issue), f"{ticket['id']}: missing fields in {issue}"
+        assert REQUIRED_FIELDS <= set(issue), (
+            f"{ticket['id']}: missing fields in {issue}"
+        )
 
     expected = ticket.get("expected_issue_count")
     if expected:
@@ -31,6 +33,8 @@ if __name__ == "__main__":
     ok = 0
     for t in TICKETS:
         resp = route_ticket(t["ticket"])
-        assert resp["issues"] and all(REQUIRED_FIELDS <= set(i) for i in resp["issues"]), t["id"]
+        assert resp["issues"] and all(
+            REQUIRED_FIELDS <= set(i) for i in resp["issues"]
+        ), t["id"]
         ok += 1
     print(f"{ok}/{len(TICKETS)} tickets valid")

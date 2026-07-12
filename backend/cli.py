@@ -1,6 +1,6 @@
 """Terminal tester for the routing pipeline. Usage:
-    python cli.py "I was charged twice this month"
-    python cli.py               (prompts for input)
+python cli.py "I was charged twice this month"
+python cli.py               (prompts for input)
 """
 
 import sys
