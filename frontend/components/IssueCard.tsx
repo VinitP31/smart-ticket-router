@@ -13,8 +13,12 @@ export default function IssueCard({ issue, index }: { issue: Issue; index: numbe
 
   return (
     <li
-      className="card-settle group relative overflow-hidden rounded-2xl border border-white/60 bg-white/80 shadow-[0_1px_2px_rgba(20,22,26,0.04),0_16px_36px_-16px_rgba(20,22,26,0.22)] backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_2px_4px_rgba(20,22,26,0.06),0_24px_48px_-16px_rgba(20,22,26,0.3)]"
-      style={{ animationDelay: `${index * 90}ms` }}
+      className="card-settle group relative overflow-hidden rounded-2xl border shadow-[0_1px_2px_rgba(20,22,26,0.04),0_16px_36px_-16px_rgba(20,22,26,0.22)] backdrop-blur-md transition-all hover:-translate-y-1 hover:shadow-[0_2px_4px_rgba(20,22,26,0.06),0_24px_48px_-16px_rgba(20,22,26,0.3)]"
+      style={{
+        animationDelay: `${index * 90}ms`,
+        backgroundColor: "var(--color-card-bg)",
+        borderColor: "var(--color-card-border)",
+      }}
     >
       <span
         className="absolute inset-x-0 top-0 h-1.5"
@@ -52,7 +56,7 @@ export default function IssueCard({ issue, index }: { issue: Issue; index: numbe
         </span>
       </div>
 
-      <div className="mx-5 border-t border-black/[0.06]" />
+      <div className="mx-5 border-t" style={{ borderColor: "var(--color-divider)" }} />
 
       <div className="p-5 pt-3">
         <p className="text-sm font-semibold" style={{ color: category.color }}>

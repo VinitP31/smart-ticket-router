@@ -23,8 +23,17 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${spaceGrotesk.variable} ${inter.variable} h-full`}>
+    <html
+      lang="en"
+      className={`${spaceGrotesk.variable} ${inter.variable} h-full`}
+      suppressHydrationWarning
+    >
       <body className="min-h-full flex flex-col font-sans antialiased">
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem("theme");var d=t?t==="dark":window.matchMedia("(prefers-color-scheme: dark)").matches;if(d)document.documentElement.classList.add("dark");}catch(e){}})();`,
+          }}
+        />
         <div className="mesh-bg" aria-hidden="true">
           <span className="mesh-blob" />
         </div>

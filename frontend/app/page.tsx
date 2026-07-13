@@ -5,6 +5,7 @@ import TicketComposer from "@/components/TicketComposer";
 import IssueCard from "@/components/IssueCard";
 import JsonToggle from "@/components/JsonToggle";
 import ProcessingTime from "@/components/ProcessingTime";
+import ThemeToggle from "@/components/ThemeToggle";
 import { routeTicket } from "@/lib/api";
 import type { RouteResponse } from "@/lib/types";
 
@@ -28,7 +29,11 @@ export default function Home() {
   };
 
   return (
-    <main className="flex flex-1 flex-col items-center gap-8 px-4 py-14 sm:px-6 sm:py-20">
+    <main className="relative flex flex-1 flex-col items-center gap-8 px-4 py-14 sm:px-6 sm:py-20">
+      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
+        <ThemeToggle />
+      </div>
+
       <div className="flex flex-col items-center gap-3 text-center">
         <div
           className="pulse-glow flex h-12 w-12 items-center justify-center rounded-2xl shadow-[0_10px_28px_-8px_rgba(124,58,237,0.6)]"
@@ -64,7 +69,10 @@ export default function Home() {
 
       <div aria-live="polite" className="contents">
         {status === "error" && (
-          <div className="card-settle shake-once relative flex w-full max-w-xl items-start gap-3 overflow-hidden rounded-2xl border border-high/25 bg-white/85 p-4 shadow-[0_16px_40px_-12px_rgba(229,72,77,0.35)] backdrop-blur-md">
+          <div
+            className="card-settle shake-once relative flex w-full max-w-xl items-start gap-3 overflow-hidden rounded-2xl border border-high/25 p-4 shadow-[0_16px_40px_-12px_rgba(229,72,77,0.35)] backdrop-blur-md"
+            style={{ backgroundColor: "var(--color-card-bg)" }}
+          >
             <span
               className="absolute inset-x-0 top-0 h-1"
               style={{ background: "linear-gradient(90deg,#e11d48,#f97316)" }}

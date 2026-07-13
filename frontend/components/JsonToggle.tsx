@@ -40,7 +40,10 @@ export default function JsonToggle({ data }: { data: RouteResponse }) {
       </button>
 
       {open && (
-        <div className="card-settle relative overflow-hidden rounded-2xl border border-black/[0.06] bg-slate shadow-[0_16px_40px_-16px_rgba(76,111,255,0.35)]">
+        <div
+          className="card-settle relative overflow-hidden rounded-2xl border border-black/[0.06] shadow-[0_16px_40px_-16px_rgba(76,111,255,0.35)]"
+          style={{ backgroundColor: "var(--color-code-bg)" }}
+        >
           <span
             className="absolute inset-x-0 top-0 h-1"
             style={{ backgroundImage: "linear-gradient(90deg,#7c3aed,#4c6fff,#e11d48)" }}
