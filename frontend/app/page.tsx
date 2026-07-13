@@ -5,6 +5,7 @@ import TicketComposer from "@/components/TicketComposer";
 import IssueCard from "@/components/IssueCard";
 import JsonToggle from "@/components/JsonToggle";
 import ProcessingTime from "@/components/ProcessingTime";
+import RoutingProgress from "@/components/RoutingProgress";
 import ThemeToggle from "@/components/ThemeToggle";
 import { routeTicket } from "@/lib/api";
 import type { RouteResponse } from "@/lib/types";
@@ -15,9 +16,11 @@ export default function Home() {
   const [ticket, setTicket] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<RouteResponse | null>(null);
+  const [runId, setRunId] = useState(0);
 
   const handleSubmit = async () => {
     if (ticket.trim().length === 0 || status === "loading") return;
+    setRunId((id) => id + 1);
     setStatus("loading");
     try {
       const data = await routeTicket(ticket);
@@ -66,6 +69,8 @@ export default function Home() {
         onSubmit={handleSubmit}
         loading={status === "loading"}
       />
+
+      <RoutingProgress key={runId} active={status === "loading"} />
 
       <div aria-live="polite" className="contents">
         {status === "error" && (
