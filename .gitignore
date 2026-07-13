@@ -7,3 +7,11 @@
 .idea/
 .claude/
 CLAUDE.md
+AGENTS.md
+
+# Node / Next.js
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
