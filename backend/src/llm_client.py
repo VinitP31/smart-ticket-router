@@ -17,8 +17,9 @@ from src.prompts import FEW_SHOT_EXAMPLES, ROUTING_SYSTEM_PROMPT, SUMMARIZATION_
 
 _MAX_TRANSIENT_RETRIES = 2
 _RETRY_BACKOFF_SECONDS = 1.5
+_LLM_TIMEOUT_SECONDS = 20.0
 
-_client = OpenAI(api_key=OPENAI_API_KEY or "not-set")
+_client = OpenAI(api_key=OPENAI_API_KEY or "not-set", timeout=_LLM_TIMEOUT_SECONDS)
 
 
 class LLMAuthError(Exception):
