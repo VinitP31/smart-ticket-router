@@ -1088,6 +1088,7 @@ A tight deck a mentor/senior will respect:
 | Mid | Frontend switched to React/Next.js; empty input handled on frontend; English-only routing; strict MVP scope. |
 | Later | Multi-issue output; long tickets summarized (not truncated); PII redaction promoted to MVP; few-shot fixed at 6–8; `confidence` removed → roadmap. |
 | **1.0 (this doc)** | Final response contract `{issues:[...]}` (same shape single/multiple); backend-generated ids; final 9-category taxonomy + team mapping; priority = business impact, independent of category; LLM-vs-backend responsibility split; end-to-end processing-time measurement shown in CLI + frontend; issue cards + collapsible "View Structured JSON" as the frontend presentation; two repos + Render/Vercel deployment. |
+| **1.1 (implementation deltas)** | Monorepo, not two repos. LLM: OpenAI `gpt-4o-mini`. Frontend palette overridden to colorful/vibrant per stakeholder ask (Part 18 specified scarce color). Added: light/dark theme toggle (`localStorage`-persisted) and a simulated staged-progress loading indicator (no real token-streaming — output is structured JSON, not streamable prose). |
 
 # Appendix B — Starter `CLAUDE.md`
 

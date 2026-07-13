@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Smart Ticket Router — Frontend
 
-## Getting Started
+Paste a support ticket, get an instant routing decision — category, priority, assigned
+team, and reasoning — rendered as one card per issue. Next.js + TypeScript + Tailwind CSS.
+Backend lives in [`../backend`](../backend) in this same repo.
 
-First, run the development server:
+Full design/architecture reference: [`../docs/Master_doc.md`](../docs/Master_doc.md).
+
+## Prerequisites
+
+- Node.js 20+
+- The backend running (locally or deployed) — see [`../backend/README.md`](../backend/README.md)
+
+## Setup
+
+```bash
+cd frontend
+npm install
+cp .env.local.example .env.local
+```
+
+Open `.env.local` and set `NEXT_PUBLIC_API_URL` to wherever the backend is running
+(default: `http://localhost:8000`).
+
+## Run
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Opens at `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Try it
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+1. Click one of the example chips (e.g. "Multi-issue") to fill the textarea, or paste your
+   own ticket text.
+2. Click **Route ticket** (or ⌘/Ctrl+Enter). A 4-stage progress checklist plays while the
+   request is in flight.
+3. Read the issue card(s) — one per detected issue, color-coded by category, with a
+   separate priority badge.
+4. Click **View Structured JSON** to see the exact backend response, verbatim.
+5. Toggle light/dark mode with the sun/moon button (top right) — persists across reloads.
 
-## Learn More
+To see the "service unavailable" state: stop the backend (or point `NEXT_PUBLIC_API_URL` at
+a dead URL) and submit a ticket.
 
-To learn more about Next.js, take a look at the following resources:
+## Lint / typecheck / build
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+npm run lint
+npx tsc --noEmit
+npm run build
+```
+All three should report clean with no errors.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Deploy (Vercel)
 
-## Deploy on Vercel
+- Import this repo on Vercel; it auto-detects Next.js — no build command overrides needed.
+- **Root directory:** `frontend` (this is a monorepo — backend lives alongside it).
+- **Environment variable:** `NEXT_PUBLIC_API_URL` → the deployed backend's Render URL.
+- After deploying, go back to the backend's `ALLOWED_ORIGINS` env var and add this
+  frontend's Vercel URL, then redeploy the backend so CORS allows it.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## What it renders
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- One card per issue in the backend's response — `category`, `priority`, `assigned_team`,
+  `reasoning` — keyed by `issue.id` (never array index).
+- A "N issues detected" pill when a ticket splits into multiple issues.
+- Processing time (`✓ Analysis Complete · Processed in X.XXs`).
+- The backend never returns a 5xx — a routing failure still comes back as a normal
+  Human-Triage card. The only true error state is the frontend being unable to reach the
+  backend at all.
+
+Full API contract: [`Master_doc.md`](../docs/Master_doc.md).
