@@ -66,6 +66,7 @@ export default function TicketComposer({
           onChange={(e) => onChange(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder="Paste a support ticket to see where it goes."
+          aria-label="Support ticket text"
           rows={5}
           className="w-full resize-none rounded-xl bg-transparent p-3.5 text-sm leading-relaxed text-ink placeholder:text-slate/45 focus:outline-none"
         />
