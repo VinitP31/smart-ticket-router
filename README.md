@@ -116,8 +116,7 @@ GET /health
 
 9 fixed categories (Authentication & Login, Billing & Payments, Technical Bug, Performance &
 Availability, Feature Request, Account Management, Security & Access, Orders & Operations,
-General/Uncategorized), each mapped to one team. Full contract, taxonomy, and priority rubric:
-[`docs/Master_doc.md`](docs/Master_doc.md).
+General/Uncategorized), each mapped to one team.
 
 ## Testing
 
@@ -142,17 +141,9 @@ Two hosts, one repo — each platform points at its own subfolder as the project
 Details: [`backend/README.md`](backend/README.md#deploy-render) ·
 [`frontend/README.md`](frontend/README.md#deploy-vercel).
 
-## Design decisions & known limitations
+## Known limitations
 
-This is a single monorepo with OpenAI as the LLM provider — both were left open by the
-original design doc and decided during the build. The frontend's colorful, animated visual
-style is a deliberate departure from the doc's original "scarce, purposeful color" brief,
-requested directly by the project stakeholder. The full decision log, including everything
-that changed from the original plan and why, lives in
-[`docs/Master_doc.md`](docs/Master_doc.md) (Appendix A).
-
-Known, accepted MVP gaps — not oversights: the `/route` endpoint has no auth/rate-limiting
+Accepted MVP scope, not oversights: the `/route` endpoint has no auth or rate-limiting
 (anyone with the URL can call it), PII redaction is regex-only (a bare 12-digit number is
-indistinguishable from an Aadhaar number), and there's no persistence layer (every request is
-stateless, nothing is stored). Rationale and the roadmap past MVP are in Master_doc Parts 19
-and 28.
+indistinguishable from an Aadhaar number), and there's no persistence layer — every request
+is stateless, nothing is stored.
