@@ -80,7 +80,7 @@ Both should report clean with no changes needed.
 ```bash
 pytest tests/test_router.py -v
 ```
-Runs 25 sample tickets (`data/sample_tickets.json`) through the real pipeline —
+Runs 27 sample tickets (`data/sample_tickets.json`) through the real pipeline —
 needs a working `OPENAI_API_KEY` in `.env`, makes real API calls.
 
 ## Deploy (Render)
