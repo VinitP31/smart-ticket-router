@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import RoutingRig from "@/components/RoutingRig";
 import TicketComposer from "@/components/TicketComposer";
 import IssueCard from "@/components/IssueCard";
 import JsonToggle from "@/components/JsonToggle";
@@ -17,6 +18,13 @@ export default function Home() {
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<RouteResponse | null>(null);
   const [runId, setRunId] = useState(0);
+  const [slipNo, setSlipNo] = useState("0000");
+
+  useEffect(() => {
+    // Random per session, client-only (would mismatch SSR if computed during render).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setSlipNo(String(1000 + Math.floor(Math.random() * 8999)).slice(0, 4));
+  }, []);
 
   const handleSubmit = async () => {
     if (ticket.trim().length === 0 || status === "loading") return;
@@ -31,108 +39,105 @@ export default function Home() {
     }
   };
 
-  return (
-    <main className="relative flex flex-1 flex-col items-center gap-8 px-4 py-14 sm:px-6 sm:py-20">
-      <div className="absolute top-4 right-4 sm:top-6 sm:right-6">
-        <ThemeToggle />
-      </div>
+  const priorities = status === "success" && result ? result.issues.map((i) => i.priority) : [];
+  const signalCount = status === "success" && result ? result.issues.length : 1;
 
-      <div className="flex flex-col items-center gap-3 text-center">
+  return (
+    <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(260px,38%)_1fr]">
+      <div className="relative min-h-[46vh] overflow-hidden" style={{ backgroundColor: "var(--color-rig-bg)" }}>
+        <RoutingRig priorities={priorities} routing={status === "loading"} />
         <div
-          className="pulse-glow flex h-12 w-12 items-center justify-center rounded-2xl shadow-[0_10px_28px_-8px_rgba(124,58,237,0.6)]"
-          style={{ backgroundImage: "linear-gradient(135deg,#7c3aed,#4c6fff 55%,#e11d48)" }}
+          className="pointer-events-none absolute top-5 right-5 font-sans text-[34px] leading-none text-[rgba(241,235,220,0.9)] [font-variant-numeric:tabular-nums]"
           aria-hidden="true"
         >
-          <svg viewBox="0 0 24 24" className="h-6 w-6" fill="none">
-            <path
-              d="M4 12h6M4 6h12M4 18h9"
-              stroke="white"
-              strokeWidth="2"
-              strokeLinecap="round"
-            />
-            <circle cx="20" cy="6" r="2" fill="#fbbf24" />
-          </svg>
+          {signalCount}
+          <span className="mt-0.5 block text-[11px] tracking-[0.1em] text-[rgba(241,235,220,0.4)] uppercase">
+            signal{signalCount === 1 ? "" : "s"}
+          </span>
         </div>
-        <div>
-          <h1 className="gradient-text font-display text-4xl font-extrabold tracking-tight sm:text-5xl">
-            Smart Ticket Router
-          </h1>
-          <p className="mt-1.5 text-sm font-medium text-slate">
-            Paste a support ticket. Get an instant, explained routing decision.
+        <div
+          className="pointer-events-none absolute bottom-5 left-5 font-mono text-[10.5px] tracking-[0.14em] text-[rgba(241,235,220,0.4)] uppercase"
+          aria-hidden="true"
+        >
+          <b style={{ color: "var(--color-stamp)" }}>◉</b> three.js — transmission glass, live state
+        </div>
+      </div>
+
+      <div className="ruled-paper relative px-[6vw] py-11 sm:px-[8vw]">
+        <div className="paper-texture" aria-hidden="true" />
+
+        <div className="relative">
+          <div
+            className="mb-6.5 flex items-start justify-between gap-3 border-b-2 pb-4"
+            style={{ borderColor: "var(--color-ink)" }}
+          >
+            <div>
+              <div className="text-[11px] tracking-[0.1em] text-ink-soft">
+                dispatch slip · no. <b className="text-ink" suppressHydrationWarning>{slipNo}</b>
+              </div>
+              <h1 className="mt-1 font-serif text-4xl font-bold text-ink italic sm:text-5xl">
+                Smart Ticket Router
+              </h1>
+              <p className="mt-2.5 max-w-[46ch] font-mono text-[12.5px] leading-relaxed text-ink-soft">
+                One message in. Every independent problem, split out, stamped, and sent to the desk
+                that owns it.
+              </p>
+            </div>
+            <ThemeToggle />
+          </div>
+
+          <TicketComposer
+            value={ticket}
+            onChange={setTicket}
+            onSubmit={handleSubmit}
+            loading={status === "loading"}
+          />
+
+          <RoutingProgress key={runId} active={status === "loading"} />
+
+          <div aria-live="polite">
+            {status === "error" && (
+              <div
+                className="shake-once mt-6 border-l-4 p-4"
+                style={{ borderColor: "var(--color-high)", backgroundColor: "var(--color-paper-2)" }}
+              >
+                <p className="font-bold" style={{ color: "var(--color-high)" }}>
+                  Service temporarily unavailable
+                </p>
+                <p className="mt-1 text-sm text-ink-soft">
+                  We couldn&apos;t reach the routing service. Please try again in a moment.
+                </p>
+              </div>
+            )}
+
+            {status === "success" && result && (
+              <div className="mt-7">
+                <div className="mb-1 flex items-center gap-2.5 text-[10px] tracking-[0.14em] text-ink-faint uppercase">
+                  routed — <ProcessingTime processingTimeMs={result.processing_time_ms} />
+                  <span
+                    className="h-px flex-1 border-t border-dashed"
+                    style={{ borderColor: "var(--color-rule)" }}
+                  />
+                </div>
+
+                <ul>
+                  {result.issues.map((issue, index) => (
+                    <IssueCard key={issue.id} issue={issue} index={index} />
+                  ))}
+                </ul>
+
+                <div className="mt-5">
+                  <JsonToggle data={result} />
+                </div>
+              </div>
+            )}
+          </div>
+
+          <p className="mt-10 text-[10px] tracking-[0.1em] text-ink-faint uppercase">
+            smart ticket router · routes each ticket to the team that owns it
           </p>
         </div>
       </div>
-
-      <TicketComposer
-        value={ticket}
-        onChange={setTicket}
-        onSubmit={handleSubmit}
-        loading={status === "loading"}
-      />
-
-      <RoutingProgress key={runId} active={status === "loading"} />
-
-      <div aria-live="polite" className="contents">
-        {status === "error" && (
-          <div
-            className="card-settle shake-once relative flex w-full max-w-xl items-start gap-3 overflow-hidden rounded-2xl border border-high/25 p-4 shadow-[0_16px_40px_-12px_rgba(229,72,77,0.35)] backdrop-blur-md"
-            style={{ backgroundColor: "var(--color-card-bg)" }}
-          >
-            <span
-              className="absolute inset-x-0 top-0 h-1"
-              style={{ background: "linear-gradient(90deg,#e11d48,#f97316)" }}
-              aria-hidden="true"
-            />
-            <span
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white"
-              style={{ background: "linear-gradient(135deg,#e11d48,#f97316)" }}
-              aria-hidden="true"
-            >
-              <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none">
-                <path
-                  d="M12 9v4M12 17h.01M10.3 3.9 2 18a2 2 0 0 0 1.7 3h16.6a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"
-                  stroke="white"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-            </span>
-            <div>
-              <p className="text-sm font-bold text-high">Service temporarily unavailable</p>
-              <p className="mt-0.5 text-sm text-ink/70">
-                We couldn&apos;t reach the routing service. Please try again in a moment.
-              </p>
-            </div>
-          </div>
-        )}
-
-        {status === "success" && result && (
-          <div className="w-full max-w-xl">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-              <ProcessingTime processingTimeMs={result.processing_time_ms} />
-              {result.issues.length > 1 && (
-                <span
-                  className="rounded-full px-3 py-1 text-xs font-bold text-white shadow-md"
-                  style={{ backgroundImage: "linear-gradient(100deg,#7c3aed,#4c6fff)" }}
-                >
-                  {result.issues.length} issues detected
-                </span>
-              )}
-            </div>
-
-            <ul className="flex flex-col gap-3">
-              {result.issues.map((issue, index) => (
-                <IssueCard key={issue.id} issue={issue} index={index} />
-              ))}
-            </ul>
-
-            <div className="mt-5">
-              <JsonToggle data={result} />
-            </div>
-          </div>
-        )}
-      </div>
-    </main>
+    </div>
   );
 }

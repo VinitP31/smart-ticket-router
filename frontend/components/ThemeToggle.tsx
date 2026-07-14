@@ -28,7 +28,7 @@ export default function ThemeToggle() {
   };
 
   if (!mounted) {
-    return <span className="block h-9 w-9" aria-hidden="true" />;
+    return <span className="block h-8 w-8" aria-hidden="true" />;
   }
 
   return (
@@ -36,11 +36,11 @@ export default function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
-      className="flex h-9 w-9 items-center justify-center rounded-full border text-ink transition-all hover:-translate-y-px focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-signal"
-      style={{ backgroundColor: "var(--color-chip-bg)", borderColor: "var(--color-divider)" }}
+      className="flex h-8 w-8 items-center justify-center border font-mono text-ink transition-colors hover:border-[var(--color-stamp)] hover:text-[var(--color-stamp)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--color-stamp)]"
+      style={{ borderColor: "var(--color-ink)" }}
     >
       {dark ? (
-        <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
           <circle cx="12" cy="12" r="4.5" stroke="currentColor" strokeWidth="1.7" />
           <path
             d="M12 2.5v2M12 19.5v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M2.5 12h2M19.5 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4"
@@ -50,7 +50,7 @@ export default function ThemeToggle() {
           />
         </svg>
       ) : (
-        <svg viewBox="0 0 24 24" className="h-4.5 w-4.5" fill="none" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" aria-hidden="true">
           <path
             d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z"
             stroke="currentColor"
