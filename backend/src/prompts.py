@@ -32,8 +32,10 @@ RULES:
 - If the message is too vague or unclassifiable, use "General / Uncategorized".
 - If an issue fits two categories, pick the PRIMARY intent and explain it in reasoning.
 - reasoning must be ONE line, <= 160 chars, stating the single deciding factor.
+- confidence is YOUR certainty in this issue's category, from 0.0 to 1.0. A clear,
+  unambiguous message is high (0.85-1.0); a vague or borderline call is lower (0.4-0.7).
 
-Return JSON: {{ "issues": [ {{ "category": ..., "priority": ..., "reasoning": ... }}, ... ] }}
+Return JSON: {{ "issues": [ {{ "category": ..., "priority": ..., "confidence": ..., "reasoning": ... }}, ... ] }}
 Do NOT include id or assigned_team; the backend adds them.
 """
 
@@ -50,6 +52,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Billing & Payments",
                 "priority": "High",
+                "confidence": 0.95,
                 "reasoning": "Duplicate charge is a direct financial loss to the customer.",
             }
         ],
@@ -60,6 +63,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Security & Access",
                 "priority": "High",
+                "confidence": 0.95,
                 "reasoning": "Suspicious login is a potential account compromise.",
             }
         ],
@@ -70,6 +74,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Performance & Availability",
                 "priority": "High",
+                "confidence": 0.95,
                 "reasoning": "Full outage blocking many users' work.",
             }
         ],
@@ -80,6 +85,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Feature Request",
                 "priority": "Low",
+                "confidence": 0.95,
                 "reasoning": "Enhancement suggestion, no workflow blocked.",
             }
         ],
@@ -90,6 +96,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "General / Uncategorized",
                 "priority": "Low",
+                "confidence": 0.5,
                 "reasoning": "Angry but no concrete problem stated; tone ignored for priority.",
             }
         ],
@@ -100,6 +107,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "General / Uncategorized",
                 "priority": "Low",
+                "confidence": 0.35,
                 "reasoning": "Too vague to classify; needs clarification from the customer.",
             }
         ],
@@ -110,6 +118,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Technical Bug",
                 "priority": "Medium",
+                "confidence": 0.9,
                 "reasoning": "Reproducible crash with error; treated as one issue, not two.",
             }
         ],
@@ -120,6 +129,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Account Management",
                 "priority": "Low",
+                "confidence": 0.9,
                 "reasoning": "Routine profile change, no urgency.",
             }
         ],
@@ -130,6 +140,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Orders & Operations",
                 "priority": "Medium",
+                "confidence": 0.85,
                 "reasoning": "One user's delivery affected; workaround is waiting or contacting carrier.",
             }
         ],
@@ -140,6 +151,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Authentication & Login",
                 "priority": "Medium",
+                "confidence": 0.9,
                 "reasoning": "Single user's login blocked; not a wider outage.",
             }
         ],
@@ -150,6 +162,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Technical Bug",
                 "priority": "Medium",
+                "confidence": 0.8,
                 "reasoning": "Sarcastic tone ignored; one user's export feature broken with a workaround.",
             }
         ],
@@ -160,6 +173,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Performance & Availability",
                 "priority": "Low",
+                "confidence": 0.6,
                 "reasoning": "Angry tone ignored; minor one-off slowness, no real impact.",
             }
         ],
@@ -170,6 +184,7 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Billing & Payments",
                 "priority": "High",
+                "confidence": 0.7,
                 "reasoning": "Primary intent is the financial impact of the double charge.",
             }
         ],
@@ -180,16 +195,19 @@ FEW_SHOT_EXAMPLES = [
             {
                 "category": "Billing & Payments",
                 "priority": "Medium",
+                "confidence": 0.85,
                 "reasoning": "Duplicate charge reported without urgency escalation.",
             },
             {
                 "category": "Authentication & Login",
                 "priority": "Medium",
+                "confidence": 0.85,
                 "reasoning": "Single user locked out; likely has a workaround.",
             },
             {
                 "category": "Feature Request",
                 "priority": "Low",
+                "confidence": 0.9,
                 "reasoning": "Dark mode is a suggestion, not a blocker.",
             },
         ],

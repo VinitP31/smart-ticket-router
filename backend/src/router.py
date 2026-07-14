@@ -96,6 +96,9 @@ def _route(raw_ticket: str, debug: dict | None = None) -> dict:
         try:
             parsed = json.loads(raw_output)
             validated = RoutingModelOutput.model_validate(parsed)
+            if debug is not None:
+                # Internal-only, never part of the API response — see schema.py.
+                debug["confidences"] = [issue.confidence for issue in validated.issues]
             return _assemble(validated)
         except (json.JSONDecodeError, ValidationError) as e:
             repair_note = str(e)

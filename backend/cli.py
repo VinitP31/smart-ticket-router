@@ -26,11 +26,14 @@ def main() -> None:
         print("Summary sent to the router:")
         print(f"  {debug['summary']}\n")
 
+    confidences = debug.get("confidences", [])
     print(f"{len(result['issues'])} issue(s) detected:\n")
-    for issue in result["issues"]:
+    for i, issue in enumerate(result["issues"]):
         print(f"  [{issue['id']}] {issue['category']}")
         print(f"      Priority     : {issue['priority']}")
         print(f"      Assigned to  : {issue['assigned_team']}")
+        if i < len(confidences):
+            print(f"      Confidence   : {confidences[i]:.2f}")
         print(f"      Reasoning    : {issue['reasoning']}\n")
 
     print(f"Response Time: {elapsed_ms / 1000:.2f} seconds ({elapsed_ms} ms)")
