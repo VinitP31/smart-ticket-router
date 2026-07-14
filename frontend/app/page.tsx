@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import RoutingRig from "@/components/RoutingRig";
 import TicketComposer from "@/components/TicketComposer";
 import IssueCard from "@/components/IssueCard";
@@ -18,13 +18,6 @@ export default function Home() {
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<RouteResponse | null>(null);
   const [runId, setRunId] = useState(0);
-  const [slipNo, setSlipNo] = useState("0000");
-
-  useEffect(() => {
-    // Random per session, client-only (would mismatch SSR if computed during render).
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSlipNo(String(1000 + Math.floor(Math.random() * 8999)).slice(0, 4));
-  }, []);
 
   const handleSubmit = async () => {
     if (ticket.trim().length === 0 || status === "loading") return;
@@ -40,21 +33,11 @@ export default function Home() {
   };
 
   const priorities = status === "success" && result ? result.issues.map((i) => i.priority) : [];
-  const signalCount = status === "success" && result ? result.issues.length : 1;
 
   return (
     <div className="grid min-h-screen grid-cols-1 md:grid-cols-[minmax(260px,38%)_1fr]">
       <div className="relative min-h-[46vh] overflow-hidden" style={{ backgroundColor: "var(--color-rig-bg)" }}>
         <RoutingRig priorities={priorities} routing={status === "loading"} />
-        <div
-          className="pointer-events-none absolute top-5 right-5 font-sans text-[34px] leading-none text-[rgba(241,235,220,0.9)] [font-variant-numeric:tabular-nums]"
-          aria-hidden="true"
-        >
-          {signalCount}
-          <span className="mt-0.5 block text-[11px] tracking-[0.1em] text-[rgba(241,235,220,0.4)] uppercase">
-            signal{signalCount === 1 ? "" : "s"}
-          </span>
-        </div>
         <div
           className="pointer-events-none absolute bottom-5 left-5 font-mono text-[10.5px] tracking-[0.14em] text-[rgba(241,235,220,0.4)] uppercase"
           aria-hidden="true"
@@ -72,10 +55,7 @@ export default function Home() {
             style={{ borderColor: "var(--color-ink)" }}
           >
             <div>
-              <div className="text-[11px] tracking-[0.1em] text-ink-soft">
-                dispatch slip · no. <b className="text-ink" suppressHydrationWarning>{slipNo}</b>
-              </div>
-              <h1 className="mt-1 font-serif text-4xl font-bold text-ink italic sm:text-5xl">
+              <h1 className="font-serif text-4xl font-bold text-ink italic sm:text-5xl">
                 Smart Ticket Router
               </h1>
               <p className="mt-2.5 max-w-[46ch] font-mono text-[12.5px] leading-relaxed text-ink-soft">
