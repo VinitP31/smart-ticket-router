@@ -5,6 +5,7 @@ export interface Issue {
   category: string;
   priority: Priority;
   assigned_team: string;
+  is_ticket: boolean;
   reasoning: string;
 }
 

@@ -104,6 +104,13 @@ export default function Home() {
                     We couldn&apos;t reach the routing service. Please try again in a moment.
                   </p>
                 </div>
+              ) : status === "success" && result && result.issues.length === 1 && !result.issues[0].is_ticket ? (
+                <div
+                  className="flex min-h-[220px] items-center justify-center rounded-2xl border p-6 text-center"
+                  style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}
+                >
+                  <p className="text-[13.5px] leading-relaxed text-ink-soft">{result.issues[0].reasoning}</p>
+                </div>
               ) : status === "success" && result ? (
                 <ul className="flex flex-col gap-3">
                   {result.issues.map((issue, index) => (
