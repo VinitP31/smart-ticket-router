@@ -16,8 +16,22 @@ export default function RoutingProgress({ active }: { active: boolean }) {
     return () => clearInterval(timer);
   }, [active]);
 
+  const flowing = active || index >= STAGES.length;
+
   return (
-    <div className="flex flex-col items-center gap-3.5 pt-11">
+    <div className="relative flex h-full min-h-[220px] flex-col items-center justify-center gap-3.5">
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full transition-opacity duration-500"
+        viewBox="0 0 560 560"
+        preserveAspectRatio="none"
+        style={{ opacity: flowing ? 1 : 0.25 }}
+        aria-hidden="true"
+      >
+        <path className="flow-path" d="M0,280 C90,280 90,110 200,110 L560,110" style={{ stroke: "var(--color-high)", animationDuration: "1.1s" }} />
+        <path className="flow-path" d="M0,280 L560,280" style={{ stroke: "var(--color-medium)", animationDuration: "1.5s" }} />
+        <path className="flow-path" d="M0,280 C90,280 90,450 200,450 L560,450" style={{ stroke: "var(--color-low)", animationDuration: "1.9s" }} />
+      </svg>
+
       {STAGES.map((stage, i) => {
         const done = i < index;
         const isActive = i === index && active;

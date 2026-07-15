@@ -65,30 +65,19 @@ body {
   transition: background-color 200ms ease, color 200ms ease;
 }
 
-.flow-lines path {
+.flow-path {
   fill: none;
-  stroke: var(--color-label);
-  stroke-width: 1.4;
+  stroke-width: 1.6;
   stroke-dasharray: 7 9;
-  opacity: 0.35;
-  animation: dash 14s linear infinite;
-}
-.flow-lines path:nth-child(2) {
-  animation-duration: 18s;
-  animation-direction: reverse;
-  opacity: 0.22;
-}
-.flow-lines path:nth-child(3) {
-  animation-duration: 22s;
-  opacity: 0.18;
-}
-.flow-lines.busy path {
-  animation-duration: 3s !important;
+  animation: dashFlow 1.4s linear infinite;
 }
 
-@keyframes dash {
+@keyframes dashFlow {
+  from {
+    stroke-dashoffset: 60;
+  }
   to {
-    stroke-dashoffset: -320;
+    stroke-dashoffset: 0;
   }
 }
 
@@ -145,7 +134,7 @@ body {
   .card-settle,
   .spinner,
   .shake-once,
-  .flow-lines path {
+  .flow-path {
     animation: none;
   }
 }

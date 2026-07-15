@@ -34,12 +34,6 @@ export default function Home() {
 
   return (
     <div className="relative min-h-screen">
-      <svg className={`flow-lines pointer-events-none absolute inset-0 h-full w-full ${status === "loading" ? "busy" : ""}`}>
-        <path d="M 340 260 C 500 260, 480 120, 660 130 S 900 260, 1000 260" />
-        <path d="M 300 420 C 500 480, 600 380, 760 420 S 950 500, 1050 470" />
-        <path d="M 360 200 C 460 160, 560 240, 700 210" />
-      </svg>
-
       <div className="relative mx-auto max-w-6xl px-6 py-8 sm:px-8">
         <div className="mb-10 flex items-center justify-between">
           <div className="flex items-center gap-3.5">
@@ -74,7 +68,7 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[minmax(280px,360px)_1fr_minmax(280px,1fr)]">
+        <div className="grid grid-cols-1 items-stretch gap-7 lg:grid-cols-[minmax(280px,360px)_1fr_minmax(280px,1fr)]">
           <div>
             <div className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-label uppercase">
               Inbound feed
