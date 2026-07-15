@@ -33,10 +33,6 @@ changes shape and **never returns a 5xx**: an internal failure still comes back 
 `200` with a Human-Triage fallback issue, so the frontend never has to special-case a broken
 backend call versus an unreachable one.
 
-## Try it live
-
-Not deployed yet. See [Deployment](#deployment) below — once live, the URLs go here.
-
 ## Run it locally
 
 ```bash
@@ -91,7 +87,6 @@ Full setup, troubleshooting, and CLI usage: [`backend/README.md`](backend/README
 |---|---|
 | Backend | Python 3.11+, FastAPI, Pydantic v2, OpenAI SDK (`gpt-4o-mini`) |
 | Frontend | Next.js 16 (App Router), TypeScript, Tailwind CSS v4 |
-| Hosting (planned) | Render (backend) · Vercel (frontend) |
 
 ## Repository layout
 
@@ -124,22 +119,6 @@ General/Uncategorized), each mapped to one team.
 cd backend && pytest tests/test_router.py -v      # 27 sample tickets through the real pipeline
 ./backend/scripts/test_failure_modes.sh           # bad/missing API key, bad model — never a 5xx
 ```
-
-## Deployment
-
-Two hosts, one repo — each platform points at its own subfolder as the project root.
-
-- **Backend → Render:** build `pip install -r requirements.txt`, start
-  `uvicorn main:app --host 0.0.0.0 --port $PORT`. Env: `OPENAI_API_KEY`, `LLM_MODEL`,
-  `ALLOWED_ORIGINS`.
-- **Frontend → Vercel:** auto-detected Next.js build. Env: `NEXT_PUBLIC_API_URL` pointed at
-  the Render URL.
-- Deploy the backend first, then the frontend, then go back and add the frontend's Vercel
-  URL to the backend's `ALLOWED_ORIGINS` and redeploy — CORS needs the frontend URL to
-  already exist.
-
-Details: [`backend/README.md`](backend/README.md#deploy-render) ·
-[`frontend/README.md`](frontend/README.md#deploy-vercel).
 
 ## Known limitations
 
