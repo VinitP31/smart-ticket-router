@@ -99,7 +99,7 @@ smart-ticket-router/
 ├── backend/    FastAPI service — see backend/README.md
 ├── frontend/   Next.js UI — see frontend/README.md
 └── docs/
-    └── Master_doc.md   full architecture/design reference + decision log
+    └── Master_doc.md   full architecture/design reference
 ```
 
 ## API contract

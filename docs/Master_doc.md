@@ -345,9 +345,9 @@ Placeholders are harmless for routing — "I was double charged on my card [CARD
 
 ## 13. Prompt engineering (system prompt + few-shot)
 
-**Approach.** There is **no historical dataset and no seeded data**, so the few-shot examples in the prompt are the only calibration signal. Use **6–8 hand-designed examples** covering every team at least once plus the edge cases (angry tone, vague, ambiguous) and a multi-issue example. Structured output is enforced at the provider level (tool use / JSON mode) *and* validated with Pydantic (Part 14).
+**Approach.** There is **no historical dataset and no seeded data**, so the few-shot examples in the prompt are the only calibration signal. The current set is **17 hand-designed examples** (`backend/src/prompts.py`'s `FEW_SHOT_EXAMPLES`) covering every team, the edge cases (angry, sarcastic, vague, ambiguous), multi-issue tickets, and the `is_ticket` edge cases (a self-service how-to, a greeting, a harmful message) — more than the original 6–8 target, because the all-9-categories-plus-edge-cases coverage rule forced it. Structured output is enforced at the provider level (JSON mode) *and* validated with Pydantic (Part 14). The ticket text is sent as a separate `"role": "user"` message — never concatenated into the system prompt string — and the prompt explicitly says that text is untrusted content to classify, not instructions to obey (prompt-injection guardrail).
 
-**Routing system prompt (current → `backend/src/prompts.py`):**
+**Routing system prompt (exact, current → `backend/src/prompts.py`):**
 ```
 You are a support ticket routing engine. You read one ENGLISH support message and
 return ONLY a JSON object. Never add prose, markdown, or code fences.
@@ -375,7 +375,7 @@ CATEGORIES (choose exactly one per issue):
 8. Orders & Operations
 9. General / Uncategorized   (fallback: vague, insufficient info, spam, unsupported)
 
-PRIORITY (choose exactly one per issue) — by BUSINESS IMPACT, not tone, not category:
+PRIORITY (business impact, NOT tone, NOT category):
 - High: financial loss, incorrect payment, security/privacy risk, outage, many users
   affected, critical workflow blocked, revenue impact, long-pending critical issue.
 - Medium: one user's important workflow affected, workaround available, moderate impact.
@@ -391,16 +391,20 @@ RULES:
 - confidence is YOUR certainty in this issue's category, from 0.0 to 1.0. A clear,
   unambiguous message is high (0.85-1.0); a vague or borderline call is lower (0.4-0.7).
 - is_ticket is true for EVERY message that describes, however vaguely, angrily, or
-  incompletely, some problem, question, or request about the product. Set it to false
-  ONLY when the message has NO support content at all: pure greetings/small talk or
+  incompletely, some problem, question, or request about the product ("broken",
+  "THIS IS RIDICULOUS", a one-word complaint, a how-to question like "how do I reset
+  my password?" — all still true, even when the answer is simple or self-service; being
+  easy to answer does NOT make it not a ticket). Set it to false ONLY when the message
+  has NO support content at all: pure greetings/small talk ("hi", "how are you") or
   abusive/harmful content with no legitimate request in it. When false, still use
   category "General / Uncategorized", priority "Low", and write reasoning as a short,
-  neutral, DIRECT reply to the user (not a routing justification).
+  neutral, DIRECT reply to the user (not a routing justification) asking them to
+  describe an issue — never repeat or engage with harmful content, just redirect.
 
 Return JSON: { "issues": [ { "category": ..., "priority": ..., "confidence": ..., "is_ticket": ..., "reasoning": ... }, ... ] }
 Do NOT include id or assigned_team; the backend adds them.
 ```
-This is the live prompt — see `backend/src/prompts.py` for the exact wording and full 17-example few-shot set (the shorter example list below shows the shape, not the whole set).
+The example list below (Part 13 continued) shows the shape of the few-shot set, not the whole 17-example set — see `backend/src/prompts.py`'s `FEW_SHOT_EXAMPLES` for the complete, current list.
 
 **Summarization prompt (long tickets only):**
 ```
@@ -409,7 +413,7 @@ request, and any urgency or impact signal (who is affected, whether work is bloc
 Do not solve anything, do not add information. Output plain text, <= ~120 words.
 ```
 
-**Few-shot set (aim for 6–8, spanning all teams + edge cases):**
+**Few-shot set (illustrative subset — the current file has 17; full list in `backend/src/prompts.py`):**
 1. Billing duplicate charge → Billing & Payments / High.
 2. Suspicious login alert → Security & Access / High.
 3. "Whole platform is down for the office" → Performance & Availability / High.
@@ -418,8 +422,11 @@ Do not solve anything, do not add information. Output plain text, <= ~120 words.
 6. "broken" → General / Uncategorized / Low (needs clarification).
 7. Ambiguous ("double charged after the app crashed at checkout") → Billing & Payments (primary intent = money).
 8. Multi-issue ("double charged AND can't log in AND add dark mode") → three issues.
+9. "how do I reset my password?" → Authentication & Login / Low, `is_ticket: true` (self-service is still routable).
+10. "hi, how are you?" → General / Uncategorized / Low, `is_ticket: false` (greeting, plain reply).
+11. Abusive message with no request in it → General / Uncategorized / Low, `is_ticket: false` (harmful, plain reply, never engages with the content).
 
-Make sure Authentication, Technical Bug, Account Management, and Orders & Operations each appear across your final examples (reuse a couple that carry two teams).
+All 9 categories are covered at least once across the full 17; Authentication, Technical Bug, Account Management, and Orders & Operations also each appear in additional examples not shown above.
 
 ## 14. Schema & validation (Pydantic + repair loop)
 
@@ -563,16 +570,18 @@ MVP shows the **total** only; an internal breakdown (LLM time vs backend time) i
 
 ## 17. Backend design (structure, endpoints, CLI)
 
-**Stack:** Python 3.11+, FastAPI, Pydantic v2, the LLM SDK (`anthropic` or `openai`), `python-dotenv`. Lint/format with `ruff` (PEP8).
+**Stack:** Python 3.11+, FastAPI, Pydantic v2, the OpenAI SDK (`gpt-4o-mini` default, override via `LLM_MODEL`), `python-dotenv`. Lint/format with `ruff` (PEP8).
 
-**Folder structure (`backend/` in the monorepo):**
+**Folder structure (`backend/` in the monorepo — actual, current):**
 ```
 backend/
 ├── README.md                 # setup + run + demo (evaluated cold)
 ├── requirements.txt
 ├── .env.example               # key NAMES only, no values
+├── .gitignore
 ├── main.py                   # FastAPI app + timing at the API boundary
 ├── cli.py                    # CLI runner
+├── conftest.py                # pytest fixtures
 ├── src/
 │   ├── __init__.py
 │   ├── config.py             # loads env: API key, LLM_MODEL
@@ -583,8 +592,11 @@ backend/
 │   ├── llm_client.py         # provider wrapper + retries + typed errors
 │   └── router.py             # orchestrates the full pipeline
 ├── data/
-│   └── sample_tickets.json   # demo tickets incl. multi-issue cases
+│   └── sample_tickets.json   # 27 demo tickets incl. multi-issue + PII + long-ticket cases
+├── scripts/
+│   └── test_failure_modes.sh  # bad/missing API key, bad model — never a 5xx
 └── tests/
+    ├── __init__.py
     └── test_router.py        # contract / batch tests (Part 24)
 ```
 
@@ -666,8 +678,8 @@ def route(body: TicketIn):
 
 **`.env.example`:**
 ```
-ANTHROPIC_API_KEY=          # or OPENAI_API_KEY
-LLM_MODEL=                  # a current small model id from the provider docs
+OPENAI_API_KEY=
+LLM_MODEL=gpt-4o-mini
 ALLOWED_ORIGINS=http://localhost:3000
 ```
 
@@ -675,76 +687,52 @@ ALLOWED_ORIGINS=http://localhost:3000
 
 ## 18. Frontend design (UI/UX, issue cards, JSON toggle)
 
-**Stack:** Next.js (App Router) + TypeScript, Tailwind CSS, optionally shadcn/ui primitives. A lighter Vite + React SPA is an acceptable alternative.
+**Stack:** Next.js 16 (App Router) + TypeScript, Tailwind CSS v4 (CSS-native theming, no `tailwind.config`).
 
 **Presentation decision (confirmed):** issue **cards** are the primary interface — one polished card per detected issue. A collapsible **"View Structured JSON"** panel shows the **exact backend response, verbatim and pretty-printed**, so the structured-JSON requirement is satisfied without cluttering the UI. After a successful route, show the **processing time**.
 
-**Folder structure (`frontend/` in the monorepo — original shape; see `frontend/README.md` for the current exact component list):**
+**Folder structure (`frontend/` in the monorepo — actual, current):**
 ```
 frontend/
 ├── README.md
 ├── .env.local.example         # NEXT_PUBLIC_API_URL
+├── .gitignore
 ├── package.json
-├── next.config.js
-├── tailwind.config.ts
+├── next.config.ts
+├── tsconfig.json
+├── eslint.config.mjs
+├── postcss.config.mjs         # Tailwind v4 (CSS-native, no tailwind.config)
 ├── app/
 │   ├── layout.tsx
-│   ├── page.tsx              # composer + results
-│   └── globals.css
+│   ├── page.tsx               # composer + pipeline + results, three-column grid
+│   ├── globals.css            # theme tokens, dot-grid + animated flow-line background
+│   └── favicon.ico
 ├── components/
-│   ├── TicketComposer.tsx    # textarea, submit (disabled if empty), chips
-│   ├── IssueCard.tsx         # one card per issue
-│   ├── JsonToggle.tsx        # collapsible pretty-printed JSON
-│   └── ProcessingTime.tsx    # "Processed in 1.18s"
+│   ├── TicketComposer.tsx     # ticket card, textarea, submit (disabled if empty)
+│   ├── SampleTickets.tsx      # sample-ticket cards, incl. one multi-issue example
+│   ├── RoutingProgress.tsx    # animated redact → classify → validate pipeline stages
+│   ├── IssueCard.tsx          # one "team lane" card per issue
+│   ├── JsonToggle.tsx         # always-visible raw-JSON bar
+│   ├── ProcessingTime.tsx     # "routed in 1.18s"
+│   └── ThemeToggle.tsx        # light/dark, localStorage-persisted
 ├── lib/
-│   ├── api.ts                # fetch wrapper, reads NEXT_PUBLIC_API_URL
-│   └── types.ts              # Issue, RouteResponse
+│   ├── api.ts                 # fetch wrapper, reads NEXT_PUBLIC_API_URL
+│   └── types.ts               # Issue, RouteResponse
 └── public/
 ```
 
-**Design direction — "The Verdict Desk."** Lean into the mission name: a calm dispatch desk that returns a *verdict* per issue. When several issues are detected, the desk returns a **stack of cards** — a great live demonstration of multi-issue detection.
+**Design direction — "Pipeline" (current, third design iteration).** An ops-console layout: a three-column grid mirroring the actual request flow — inbound ticket composer + sample tickets on the left, an animated `redact → classify → validate` pipeline-stage indicator in the middle, and the "team lanes" results column with the raw-JSON bar on the right. Earlier iterations ("The Verdict Desk" — centered colorful glass cards; "Dispatch Slip" — split-screen paper slip + a real Three.js glass-shard rig) were both fully replaced, not layered on top of; there is no glass-card or Three.js code in the current app.
 
-- **Palette (scarce, purposeful):** `Ink #14161A` text/base, `Slate #2A2F3A` panels, `Mist #EEF1F6` canvas; impact colours used **only** on the priority spine/badge — `High #E5484D`, `Medium #F5A524`, `Low #30A46C`; `Signal #4C6FFF` for interactive states.
-- **Type (2 roles):** a characterful display face for the category (e.g. Space Grotesk) + a clean UI face (Inter). The category is the hero of each card.
-- **Layout:** centered composer (large textarea + one "Route ticket" button) that slides up to reveal cards below. Each card has a slim vertical **priority spine** in its impact colour and a colour-coded **priority badge**.
+- **Palette:** indigo/blue accent on a light or dark neutral ground (CSS-custom-property tokens, swapped via a `.dark` class — Tailwind v4 CSS-native theming, no `tailwind.config`); priority still reads via colour (High/Medium/Low) on each team-lane card's left stripe.
+- **Background:** a dot-grid plus animated dashed SVG "flow lines" (`.flow-lines` in `globals.css`), suggesting live data movement behind the three columns.
+- **Type:** a clean UI face throughout; the category/team name is the hero of each result card, not a separate display face.
+- **Layout:** `TicketComposer` + `SampleTickets` (left) → `RoutingProgress` pipeline-stage boxes (middle, idle → running → done) → `IssueCard` team lanes + `JsonToggle` (right).
 - **Rendering the list:** map over `issues`, render one `<IssueCard>` per issue, **`key={issue.id}`** — never the array index.
-- **Signature moment:** a ~400ms card "settle" animation; with multiple issues, stagger cards ~80ms so they cascade.
-- **Delight, cheaply:** example-ticket chips (including one multi-issue example) that fill the box on click — so a first-time user can try it with zero typing; a copy-JSON button; a "Deliberating…" loading state.
-- **Empty input handling (confirmed, frontend-only):** Submit is `disabled` whenever the trimmed input is empty; attempting to submit empty shows a clear inline notice ("Enter a ticket to route."). Nothing empty ever reaches the backend.
+- **`is_ticket: false` handling:** a single-issue response with `is_ticket: false` (greeting/harmful input) renders as a centered plain-text reply instead of the team-lane card list — see Part 9.
+- **Empty input handling (confirmed, frontend-only):** Submit is `disabled` whenever the trimmed input is empty. Nothing empty ever reaches the backend.
 - **Quality floor:** responsive/mobile, visible focus rings, respect `prefers-reduced-motion`.
 
-**UI states (ASCII mockups — build all four).** The screen has four states; design each deliberately.
-
-```
-EMPTY (initial)                     LOADING (after submit)
-┌─────────────────────────────┐     ┌─────────────────────────────┐
-│  Route a support ticket      │     │  Route a support ticket      │
-│  [chip][chip][multi-issue]   │     │                              │
-│  ┌─────────────────────────┐ │     │  ┌─────────────────────────┐ │
-│  │ Paste a support ticket  │ │     │  │ I was double charged... │ │
-│  │ to see where it goes.   │ │     │  └─────────────────────────┘ │
-│  └─────────────────────────┘ │     │      Deliberating…           │
-│  [ Route ticket ]  (greyed)  │     │  [ Deliberating… ] (disabled)│
-└─────────────────────────────┘     └─────────────────────────────┘
-
-RESULTS (success)                   API DOWN (error)
-┌─────────────────────────────┐     ┌─────────────────────────────┐
-│ ✓ Processed in 1.18s         │     │  ┌─────────────────────────┐ │
-│ 3 issues detected            │     │  │ I was double charged... │ │
-│ ┃🔴 Billing & Payments        │     │  └─────────────────────────┘ │
-│ ┃  High · Finance Team       │     │  [ Route ticket ]            │
-│ ┃  Duplicate charge.         │     │                              │
-│ ┃🟠 Authentication & Login    │     │  ⚠ AI service temporarily    │
-│ ┃  Medium · Identity Team    │     │    unavailable. Please try   │
-│ ┃  Cannot log in.            │     │    again in a moment.        │
-│ [ View Structured JSON ▸ ]   │     │                              │
-└─────────────────────────────┘     └─────────────────────────────┘
-```
-- **Empty:** placeholder invites input; Submit greyed/disabled; chips offer one-click examples.
-- **Loading:** button shows "Deliberating…" and is disabled to prevent double-submits.
-- **Results:** processing time, an issue count when > 1, one colour-spined card per issue, and the collapsible JSON toggle.
-- **API down:** a plain, actionable message ("try again in a moment") — never a raw stack trace. (Note: if the *backend* is reached but routing fails internally, you won't hit this state — you'll get a normal Human-Triage card, because the backend never returns an error status. This error state is for when the frontend can't reach the backend at all.)
-
+**UI states.** Five states exist: **empty** (composer + sample chips, submit disabled), **loading** (`RoutingProgress` animates redact → classify → validate), **results** (team-lane cards + always-visible JSON bar), **plain reply** (`is_ticket: false` — centered text, no cards), and **API down** (frontend can't reach the backend at all — a plain actionable message, never a raw stack trace; a routing failure the backend *can* complete still comes back as a normal Human-Triage card, not this state). Current screenshots: `docs/screenshots/empty-light.png`, `docs/screenshots/results-dark.png`.
 **`lib/types.ts` (the contract, mirrored on the frontend):**
 ```ts
 export type Priority = "High" | "Medium" | "Low";
@@ -768,7 +756,7 @@ Two non-negotiables: the API base URL comes from `NEXT_PUBLIC_API_URL` (never ha
 
 ## 19. Security, secrets & authentication
 
-**LLM provider authentication.** The backend authenticates to the LLM provider with an **API key** stored in an environment variable (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`). The key lives **only on the backend**, never in the frontend, never in code, never in git. It's in `.env` (git-ignored) — there's no production host, so no other env-var store is needed (see Part 23). Commit only `.env.example` with key *names*.
+**LLM provider authentication.** The backend authenticates to OpenAI with an **API key** stored in the `OPENAI_API_KEY` environment variable. The key lives **only on the backend**, never in the frontend, never in code, never in git. It's in `.env` (git-ignored) — there's no production host, so no other env-var store is needed (see Part 23). Commit only `.env.example` with key *names*.
 
 **Secrets checklist:** `.env` in `.gitignore`; `.env.example` committed with names only; no keys anywhere in source.
 
@@ -791,7 +779,7 @@ Two non-negotiables: the API base URL comes from `NEXT_PUBLIC_API_URL` (never ha
 | Frontend | Next.js (App Router) + TypeScript, Tailwind | UI: composer, issue cards, JSON toggle, timing |
 | Backend | Python 3.11+, FastAPI | API, pipeline orchestration, all deterministic logic |
 | Validation | Pydantic v2 | Enforce the JSON contract, enum categories/priorities |
-| LLM | Anthropic or OpenAI (small, fast model) | Issue detection, classification, priority, reasoning |
+| LLM | OpenAI `gpt-4o-mini` (override via `LLM_MODEL`) | Issue detection, classification, priority, reasoning |
 | Secrets | python-dotenv (`.env`) locally | Keep API keys out of code/git |
 | Lint/format | ruff (backend) / ESLint (frontend) | Conventions |
 | Hosting | **None — local only** (see Part 23) | No public API, no public UI |
