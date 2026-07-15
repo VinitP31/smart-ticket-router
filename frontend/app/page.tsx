@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import TicketComposer from "@/components/TicketComposer";
 import SampleTickets from "@/components/SampleTickets";
 import RoutingProgress from "@/components/RoutingProgress";
-import IssueCard from "@/components/IssueCard";
+import IssueCard, { PRIORITY_COLOR } from "@/components/IssueCard";
+import FlowLines from "@/components/FlowLines";
 import JsonToggle from "@/components/JsonToggle";
 import ProcessingTime from "@/components/ProcessingTime";
 import ThemeToggle from "@/components/ThemeToggle";
@@ -13,11 +14,18 @@ import type { RouteResponse } from "@/lib/types";
 
 type Status = "idle" | "loading" | "success" | "error";
 
+const FALLBACK_COLORS = ["var(--color-high)", "var(--color-medium)", "var(--color-low)"];
+
 export default function Home() {
   const [ticket, setTicket] = useState("");
   const [status, setStatus] = useState<Status>("idle");
   const [result, setResult] = useState<RouteResponse | null>(null);
   const [runId, setRunId] = useState(0);
+
+  const gridRef = useRef<HTMLDivElement>(null);
+  const originRef = useRef<HTMLDivElement>(null);
+  const rightWrapRef = useRef<HTMLDivElement>(null);
+  const cardElsRef = useRef<(HTMLLIElement | null)[]>([]);
 
   const handleSubmit = async () => {
     if (ticket.trim().length === 0 || status === "loading") return;
@@ -31,6 +39,14 @@ export default function Home() {
       setStatus("error");
     }
   };
+
+  // The one branch below that actually renders one <IssueCard> per issue —
+  // every other branch (error / plain-reply / awaiting) has no per-issue
+  // targets, so the flow lines fall back to evenly splitting that box.
+  const showCards = status === "success" && !!result && !(result.issues.length === 1 && !result.issues[0].is_ticket);
+  const targets = showCards ? { elsRef: cardElsRef, colors: result!.issues.map((issue) => PRIORITY_COLOR[issue.priority]) } : null;
+  const flowing = status === "loading" || status === "success";
+  const recomputeKey = `${status}-${runId}-${result?.issues.map((i) => i.id).join(",") ?? ""}`;
 
   return (
     <div className="relative min-h-screen">
@@ -68,7 +84,17 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 items-stretch gap-7 lg:grid-cols-[minmax(280px,360px)_1fr_minmax(280px,1fr)]">
+        <div ref={gridRef} className="relative grid grid-cols-1 items-stretch gap-7 lg:grid-cols-[minmax(280px,360px)_1fr_minmax(280px,1fr)]">
+          <FlowLines
+            containerRef={gridRef}
+            originRef={originRef}
+            targets={targets}
+            fallbackRef={rightWrapRef}
+            fallbackColors={FALLBACK_COLORS}
+            flowing={flowing}
+            recomputeKey={recomputeKey}
+          />
+
           <div>
             <div className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-label uppercase">
               Inbound feed
@@ -77,11 +103,9 @@ export default function Home() {
             <SampleTickets value={ticket} onChange={setTicket} />
           </div>
 
-          <RoutingProgress
-            key={runId}
-            active={status === "loading"}
-            issues={status === "success" ? result?.issues : null}
-          />
+          <div ref={originRef} className="h-full">
+            <RoutingProgress key={runId} active={status === "loading"} />
+          </div>
 
           <div>
             <div className="mb-3 flex items-center gap-2.5 font-mono text-[11px] font-semibold tracking-[0.14em] text-label uppercase">
@@ -89,7 +113,7 @@ export default function Home() {
               {status === "success" && result && <ProcessingTime processingTimeMs={result.processing_time_ms} />}
             </div>
 
-            <div aria-live="polite">
+            <div ref={rightWrapRef} aria-live="polite">
               {status === "error" ? (
                 <div
                   className="shake-once flex min-h-[220px] flex-col items-center justify-center gap-1.5 rounded-2xl border-[1.5px] border-dashed p-6 text-center"
@@ -112,7 +136,14 @@ export default function Home() {
               ) : status === "success" && result ? (
                 <ul className="flex flex-col gap-3">
                   {result.issues.map((issue, index) => (
-                    <IssueCard key={issue.id} issue={issue} index={index} />
+                    <IssueCard
+                      key={issue.id}
+                      ref={(el) => {
+                        cardElsRef.current[index] = el;
+                      }}
+                      issue={issue}
+                      index={index}
+                    />
                   ))}
                 </ul>
               ) : (

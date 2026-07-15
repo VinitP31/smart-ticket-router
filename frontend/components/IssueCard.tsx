@@ -1,3 +1,4 @@
+import { forwardRef } from "react";
 import type { Issue } from "@/lib/types";
 
 export const PRIORITY_COLOR: Record<Issue["priority"], string> = {
@@ -6,11 +7,15 @@ export const PRIORITY_COLOR: Record<Issue["priority"], string> = {
   Low: "var(--color-low)",
 };
 
-export default function IssueCard({ issue, index }: { issue: Issue; index: number }) {
+const IssueCard = forwardRef<HTMLLIElement, { issue: Issue; index: number }>(function IssueCard(
+  { issue, index },
+  ref,
+) {
   const priorityColor = PRIORITY_COLOR[issue.priority];
 
   return (
     <li
+      ref={ref}
       className="card-settle rounded-xl border-l-[3px] border-y border-r p-4"
       style={{
         animationDelay: `${index * 90}ms`,
@@ -38,4 +43,6 @@ export default function IssueCard({ issue, index }: { issue: Issue; index: numbe
       <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{issue.reasoning}</p>
     </li>
   );
-}
+});
+
+export default IssueCard;
