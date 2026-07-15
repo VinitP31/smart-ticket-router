@@ -1,14 +1,11 @@
-# Smart Ticket Router — Master Engineering Document
-### Port·04 · "The Senate of Gods" · Calfus Gen AI Mission
+# Smart Ticket Router — Engineering Document
 **Status:** Confirmed design · MVP build spec · Source of truth
-**Owner:** Vinit (Gen AI Intern) · **Reviewer:** Mentor
-**Document version:** 1.0
 
 ---
 
-> **What this document is.** The single source of truth for the Smart Ticket Router. Every architectural, product, UI/UX, backend, LLM, and security decision that has been confirmed lives here, plus the deployment question and why it was declined. Use it while coding, while learning, when you hit an error, when preparing your demo or slides, and when walking a mentor or senior through the system.
+> **What this document is.** The single source of truth for the Smart Ticket Router. Every architectural, product, UI/UX, backend, LLM, and security decision that has been confirmed lives here, plus the deployment question and why it was declined. Use it while coding, while learning, and when you hit an error.
 >
-> **How to read it.** Parts 1–6 are the mental model (read first, and before any demo). Parts 7–16 are the confirmed design & contracts (the rules the code must obey). Parts 17–19 are backend/frontend/security build specs. Parts 20–23 cover tech stack, GitHub, and the (declined) deployment question. Parts 24–33 are testing, trade-offs, rubric prep, and demo material. The appendices hold a decision log and a ready-to-use `CLAUDE.md`.
+> **How to read it.** Parts 1–6 are the mental model (read first). Parts 7–16 are the confirmed design & contracts (the rules the code must obey). Parts 17–19 are backend/frontend/security build specs. Parts 20–23 cover tech stack, GitHub, and the (declined) deployment question. Parts 24–28 are testing, trade-offs, and limitations.
 >
 > **Golden rules that must never be broken (memorize these five):**
 > 1. The API always returns the **same shape** — `{ "issues": [ ... ] }`. Only the array length changes.
@@ -58,15 +55,7 @@
 26. Trade-offs & design decisions (+ ADR-001…008)
 27. Limitations & "what I'd do differently"
 28. Future enhancements (roadmap)
-29. Evaluation rubric decoder
-30. Mentor Q&A cheat sheet
-31. Demo script
-32. Presentation / slide outline
-33. Glossary
-
-**Appendices**
-- A. Decision log / revision history
-- B. Starter `CLAUDE.md`
+29. Glossary
 
 ---
 
@@ -220,12 +209,12 @@ These are the **only** allowed categories. The model must pick exactly one per i
 | 8 | Orders & Operations | Operations Team | Shipping, delivery, order status |
 | 9 | General / Uncategorized | Human Triage | Vague, insufficient info, spam, unsupported |
 
-**Design rationale (say this to your mentor):**
+**Design rationale:**
 - **Category is user-facing; team is internal.** This mirrors real production systems and is exactly why the team is derived in code, not asked of the model.
 - **Department-based, SaaS-realistic.** Splitting "technical" into *Technical Bug* (Engineering) vs *Performance & Availability* (Platform) forces the model to reason ("is it broken, or just slow?") and maps to two genuinely different teams.
 - **`General / Uncategorized` is the safety valve.** A vague or spam ticket has a legitimate home instead of being forced into a wrong bucket. This is what makes the vague-ticket edge case graceful.
 
-> **Known gap to keep in mind:** there is no dedicated "How-To / Usage Question" category. Pure how-to questions will land in `Account Management` or `General / Uncategorized`. This is an accepted MVP simplification — if the mentor wants how-to as its own category later, it slots in as a 10th entry with a Customer Success mapping.
+> **Known gap to keep in mind:** there is no dedicated "How-To / Usage Question" category. Pure how-to questions will land in `Account Management` or `General / Uncategorized`. This is an accepted MVP simplification — if how-to becomes its own category later, it slots in as a 10th entry with a Customer Success mapping.
 
 ## 8. Priority model
 
@@ -300,7 +289,7 @@ Notice rows 1–2 are the **same category, different priority** — that is the 
 - `id` is assigned by the backend (a unique integer per response, e.g. 1..N). The LLM never produces it.
 - There is **no `confidence` field** (deferred to the roadmap as "Confidence Score").
 
-> **Open item — processing time placement (confirm with mentor).** The confirmed rule is that the *issues* schema never changes. To carry the timing without touching that schema, this document places `processing_time_ms` as a **top-level sibling field** next to `issues`. The alternative is an HTTP response header (`X-Processing-Time-Ms`). Either keeps the issues array untouched; pick one with your mentor. The frontend converts ms → seconds for display.
+> **Design note — processing time placement.** The confirmed rule is that the *issues* schema never changes. To carry the timing without touching that schema, `processing_time_ms` is a **top-level sibling field** next to `issues` (the alternative considered was an HTTP response header, `X-Processing-Time-Ms`). The frontend converts ms → seconds for display.
 
 ## 10. Multi-issue handling
 
@@ -333,7 +322,7 @@ Before the ticket reaches the LLM (or any log), a **regex** pass replaces person
 | PAN (India tax ID) | `[PAN]` |
 | Bank account number | `[ACCOUNT]` |
 
-Placeholders are harmless for routing — "I was double charged on my card [CARD]" still classifies as Billing perfectly. **Framing for the mentor:** *"Regex is the right level for this MVP — fast, deterministic, no external dependency. An enterprise system would add a dedicated PII-detection service (a cloud DLP API or a trained NER model) to catch names and addresses regex misses, but that's overkill for this scope."*
+Placeholders are harmless for routing — "I was double charged on my card [CARD]" still classifies as Billing perfectly. **Note:** regex is the right level for this MVP — fast, deterministic, no external dependency. An enterprise system would add a dedicated PII-detection service (a cloud DLP API or a trained NER model) to catch names and addresses regex misses, but that's overkill for this scope.
 
 ## 13. Prompt engineering (system prompt + few-shot)
 
@@ -478,7 +467,7 @@ In words: call the model → validate with `RoutingModelOutput` → if it fails,
 
 **API failure (bad key / network / rate limit):** wrap the call in try/except; retry transient errors (429/5xx/timeout) with a short backoff; on an auth error don't retry. In all failure cases return the **fallback**, never a crash.
 
-**Fallback (always a valid, contract-shaped response).** This is the exact JSON the API returns when routing cannot complete (bad API key, network down, or JSON invalid after the one repair). Documenting it explicitly is the direct answer to **M4B3** ("API failure is handled without crashing"):
+**Fallback (always a valid, contract-shaped response).** This is the exact JSON the API returns when routing cannot complete (bad API key, network down, or JSON invalid after the one repair). This is the direct answer to "how is an API failure handled without crashing":
 
 ```json
 {
@@ -750,7 +739,7 @@ Two non-negotiables: the API base URL comes from `NEXT_PUBLIC_API_URL` (never ha
 
 **LLM provider authentication.** The backend authenticates to the LLM provider with an **API key** stored in an environment variable (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`). The key lives **only on the backend**, never in the frontend, never in code, never in git. It's in `.env` (git-ignored) — there's no production host, so no other env-var store is needed (see Part 23). Commit only `.env.example` with key *names*.
 
-**Secrets checklist (evaluated — M4B5/M4E3):** `.env` in `.gitignore`; `.env.example` committed with names only; no keys anywhere in source.
+**Secrets checklist:** `.env` in `.gitignore`; `.env.example` committed with names only; no keys anywhere in source.
 
 **CORS (access control between the two apps).** The backend must allow the frontend's origin. `ALLOWED_ORIGINS` (env) defaults to `http://localhost:3000` — that's the only origin that ever needs to be allowed, since nothing is deployed (Part 23).
 
@@ -773,7 +762,7 @@ Two non-negotiables: the API base URL comes from `NEXT_PUBLIC_API_URL` (never ha
 | Validation | Pydantic v2 | Enforce the JSON contract, enum categories/priorities |
 | LLM | Anthropic or OpenAI (small, fast model) | Issue detection, classification, priority, reasoning |
 | Secrets | python-dotenv (`.env`) locally | Keep API keys out of code/git |
-| Lint/format | ruff (backend) / ESLint (frontend) | Conventions (M4E4) |
+| Lint/format | ruff (backend) / ESLint (frontend) | Conventions |
 | Hosting | **None — local only** (see Part 23) | No public API, no public UI |
 | Version control | Git + GitHub (two repos) | Source, history, evaluation |
 
@@ -783,7 +772,7 @@ Per the confirmed decision, the project uses **two separate repositories**:
 - `smart-ticket-router-backend` — FastAPI service + CLI + this doc under `/docs`.
 - `smart-ticket-router-frontend` — Next.js app.
 
-**Why two repos here:** the original two-repo plan assumed the backend would deploy to Render and the frontend to Vercel — separate hosts, separate build systems, separate env vars, each with its own clean, independently-buildable repo. This was later superseded on both counts: the project moved to a **monorepo** (see Appendix A, 1.1), and deployment itself was declined entirely (Part 23) — the app runs locally only. **Trade-off (as originally reasoned):** two repos meant syncing their contracts manually (this document is what kept them in sync), while a monorepo would have been simpler to clone and version together but complicated two independent deployments — moot now that there's nothing to deploy. Historical rationale kept here for the record; put a link to the *other* repo at the top of each README so a reviewer can find both.
+**Why two repos here:** the original two-repo plan assumed the backend would deploy to Render and the frontend to Vercel — separate hosts, separate build systems, separate env vars, each with its own clean, independently-buildable repo. This was later superseded on both counts: the project moved to a **monorepo**, and deployment itself was declined entirely (Part 23) — the app runs locally only. **Trade-off (as originally reasoned):** two repos meant syncing their contracts manually (this document is what kept them in sync), while a monorepo would have been simpler to clone and version together but complicated two independent deployments — moot now that there's nothing to deploy. Historical rationale kept here for the record; put a link to the *other* repo at the top of each README so anyone reading it can find both.
 
 ## 22. Version control & GitHub (step by step)
 
@@ -806,7 +795,7 @@ out/
 .DS_Store
 ```
 
-**Commit hygiene (evaluated — M4D3).** Commit **little and often** across the two-week sprint; a single night-before dump is visible and penalized. Write real messages ("add PII redaction", "wire multi-issue rendering"), not "update". A suggested day-by-day arc lives in Part 24's sibling plan below.
+**Commit hygiene.** Commit **little and often**; a single night-before dump is a bad signal. Write real messages ("add PII redaction", "wire multi-issue rendering"), not "update".
 
 **Push each repo (run inside each project folder):**
 ```bash
@@ -825,14 +814,14 @@ git push -u origin main
 ```
 Repeat for the frontend repo. After the first push, the normal loop is `git add -A && git commit -m "…" && git push`.
 
-**README requirements (both repos — evaluated cold, M4E2).** Each README must let another developer run it without help. Minimum sections:
+**README requirements (both repos — evaluated cold).** Each README must let another developer run it without help. Minimum sections:
 - One-line description + link to the sibling repo.
 - **Prerequisites** (Python 3.11+ / Node 18+).
 - **Setup**: clone, create venv / `npm install`, copy `.env.example` → `.env` and fill the key.
 - **Run**: exact commands (`uvicorn main:app --reload` / `npm run dev`).
 - **Try it**: a sample request (a `curl` for the backend; the URL for the frontend) and the expected JSON.
 - **Deploy**: not applicable — see Part 23.
-After writing it, **follow it on a fresh clone** — if it doesn't work cold, it fails M4E2.
+After writing it, **follow it on a fresh clone** — if it doesn't work cold, fix it.
 
 ## 23. Deployment (not applicable — runs locally only)
 
@@ -846,7 +835,7 @@ Not deployed. Deployment (Render for the backend, Vercel for the frontend) was c
 
 You do not need a formal accuracy framework (that's roadmap). You need a **batch runner** proving the contract holds on every sample, plus a couple of targeted checks.
 
-**Layer 1 — contract test (M4S1/M4S2):** push every sample ticket through; assert the response has an `issues` array and every issue has all five fields.
+**Layer 1 — contract test:** push every sample ticket through; assert the response has an `issues` array and every issue has all five fields.
 ```python
 import json
 from src.router import route_ticket
@@ -863,7 +852,7 @@ for t in tickets:
 print(f"{ok}/{len(tickets)} tickets valid")
 ```
 **Layer 2 — multi-issue tests:** a few tickets with `expected_issue_count` (e.g. the 3-issue example) prove detection and non-over-splitting.
-**Layer 3 — priority spot-checks:** eyeball reasoning on a handful of known-severity tickets (M4S6) — be ready to talk through them.
+**Layer 3 — priority spot-checks:** eyeball reasoning on a handful of known-severity tickets.
 
 **Sample tickets to include** (`data/sample_tickets.json`): at least two per category (single-issue) plus the required edge cases (angry, vague, ambiguous) and 2–3 multi-issue tickets with `expected_issue_count`.
 
@@ -894,11 +883,9 @@ print(f"{ok}/{len(tickets)} tickets valid")
 
 Plus 2–3 **multi-issue** rows with `expected_issue_count`, e.g.: *"I was double charged AND can't log in AND please add dark mode"* → 3 issues (Billing/Medium, Authentication/Medium, Feature Request/Low); *"Export crashes with a 500, and separately my invoice is wrong"* → 2 issues (Technical Bug, Billing).
 
-> Rows 1–3 (same category, three priorities) and 19–20 (vague/angry edge cases) are your strongest talking points — they prove priority is impact-driven and tone-independent.
+> Rows 1–3 (same category, three priorities) and 19–20 (vague/angry edge cases) are the strongest proof points — they show priority is impact-driven and tone-independent.
 
-**Suggested 2-week commit arc (M4D3):** Day 1–2 skeleton + taxonomy + schema · Day 3 redact.py · Day 4–5 prompts + llm_client + first single-issue route · Day 6 multi-issue + validation + id/team assembly · Day 7 repair loop + fallback + FastAPI + timing · Day 8 summarization branch + edge cases · Day 9–10 frontend composer + cards + empty handling · Day 11 animation + JSON toggle + processing-time UI · Day 12 sample tickets + batch runner + before/after · Day 13 READMEs (deployment considered, deferred/declined — Part 23) · Day 14 end-to-end dry run.
-
-## 25. Before/after time comparison (M4S7)
+## 25. Before/after time comparison
 
 **Manual baseline (do it for real — 10 minutes):** take 10 tickets, time yourself reading each and writing category + priority + team, average the seconds/ticket (typically 30–60s).
 
@@ -924,18 +911,18 @@ Honest caveat: issues routed to Human Triage still need a person, so the real-wo
 | Consistency | **temperature 0** + enums | Higher temp | Stable routing decisions |
 | PII | **Regex** redaction | DLP/NER service | Right level for MVP; no dependency |
 | Model size | **Small, fast** model | Frontier model | Classification doesn't need frontier; cheaper/faster |
-| Repos | **Two** (FE/BE) | Monorepo | Originally reasoned as clean, independent deploys to Vercel/Render — superseded (Appendix A 1.1: monorepo chosen; deployment itself later declined) |
+| Repos | **Two** (FE/BE) | Monorepo | Originally reasoned as clean, independent deploys to Vercel/Render — superseded (project later moved to a monorepo; deployment itself later declined) |
 | `confidence` | **Omitted** (roadmap) | Include now | Keeps the contract minimal; not required |
 
 ### Architecture Decision Records (ADRs)
 
-The table above is the quick reference; these are the eight decisions a mentor is most likely to probe, written as short records you can speak to.
+The table above is the quick reference; these are the eight decisions most worth being able to speak to in detail.
 
 **ADR-001 — Why FastAPI (backend framework)?**
 FastAPI gives typed request/response models via Pydantic (which we already need for the JSON contract), automatic validation, and near-zero boilerplate for a single JSON endpoint. It's async-ready for the LLM calls, has first-class docs, and runs trivially with uvicorn (locally — see Part 23). Flask would also work but would mean bolting validation on separately; Django is far too heavy for one endpoint.
 
 **ADR-002 — Why Next.js (frontend framework)?**
-The mentor asked for a React/Next.js UI that looks genuinely good. Next.js gives a batteries-included React setup (routing, build, env handling) and pairs cleanly with Tailwind for a polished look. A plain Vite + React SPA is an acceptable lighter alternative; we chose Next.js for the smoother DX and polish (its one-click deploy path was a factor when deployment was still on the table — see Part 23 — but is moot now).
+The brief called for a React/Next.js UI that looks genuinely good. Next.js gives a batteries-included React setup (routing, build, env handling) and pairs cleanly with Tailwind for a polished look. A plain Vite + React SPA is an acceptable lighter alternative; we chose Next.js for the smoother DX and polish (its one-click deploy path was a factor when deployment was still on the table — see Part 23 — but is moot now).
 
 **ADR-003 — Why few-shot prompting?**
 There is no historical dataset and no fine-tuning budget, so in-prompt examples are the only way to teach the model our specific taxonomy and priority rubric. Six to eight carefully chosen examples (covering every team plus the edge and multi-issue cases) calibrate classification far more than prompt wording alone. Zero-shot gets the JSON shape but drifts on our categories; fine-tuning is out of scope with no data.
@@ -981,62 +968,7 @@ Statelessness keeps the system simple, horizontally scalable, and easy to reason
 - **Streaming responses** — stream issue cards as detected for snappier perceived latency.
 - *(Extras worth keeping on the radar:)* **prompt-injection defense** and an **automated accuracy harness** with a CI gate.
 
-## 29. Evaluation rubric decoder
-
-**M4A — AI Concept (21%)** · A1 explain in plain English → the Part 5 narration + "JSON schema is a contract for the answer" · A2 why this approach → few-shot (no dataset), small model, enum enforcement · A3 input→output → the Part 5 sequence · A4 where it fails → ambiguous issues, borderline priority, occasional 2-vs-3 split; that's why uncertain issues go to Human Triage · A5 business outcome → the Tier-1 lead story (Part 2).
-
-**Integration Quality (18%)** · B1 consistency → temp 0 + enums · B2 edge cases → empty (frontend), long (summarize), PII (redaction), multi-issue; multi-language out of scope · B3 API failure → bad key → graceful fallback, no crash · B4 usable output → issue cards + JSON toggle · B5 no secrets → `.env`/`.gitignore`/host env vars + PII redaction.
-
-**Problem Solution Fit (14%)** · C1 solves it → route real tickets live (locally) · C2 non-technical operable → example chips, one-click · C3 format fits → clean web app for support ops · C4 complete scope → text in → cards + JSON + time, running end to end (deployment explicitly out of scope, Part 23).
-
-**Learning (11%)** · D1 hardest → e.g. tone-independent priority · D2 what I'd change → Part 27 · D3 commits → 2-week spread (Part 24) · D4 least confident → e.g. taxonomy on unseen tickets · D5 beyond the brief → taxonomy design, multi-issue, PII, summarize-don't-truncate, repair loop.
-
-**Code Quality (7%)** · E1 readable → Part 17/18 structure · E2 README runs cold → Part 22 · E3 security → Part 19 · E4 conventions → ruff / ESLint.
-
-**M4S — Mission-Specific (30%)** · S1 10/10 valid JSON → Part 14 + repair loop + batch runner · S2 all fields → enums + backend id/team · S3 angry tone → tone≠priority · S4 vague → General/Human Triage graceful · S5 ambiguous → primary intent + reasoning · S6 defensible priority → Part 8 rubric + worked examples · S7 before/after → Part 25 + live processing time.
-
-## 30. Mentor Q&A cheat sheet
-
-- **"Explain JSON schema like I'm a PM."** → "A contract for the AI's answer: it must return an issues list where each issue has category, priority, team, reasoning, and priority is only High/Medium/Low. If the AI goes off-contract, my code rejects it and asks again."
-- **"Why does the AI not pick the team?"** → "Team is a fixed business rule — I derive it from the category in code so it can never drift. The AI only classifies."
-- **"Why summarize instead of truncate?"** → Part 11.
-- **"Same category, different priority — how?"** → Part 8: priority is business impact, not category. A billing *question* is Low; a double *charge* is High.
-- **"Where is it most likely wrong?"** → "Ambiguous issues, borderline priority, and rarely how it splits a multi-issue ticket — which is why uncertain issues go to Human Triage with a stated reason."
-- **"[uses a bad key] does it crash?"** → "No — it catches the auth error and returns one Human-Triage issue with a clear reason. A failed AI call downgrades to a human, not to an exception."
-- **"What did you figure out beyond the brief?"** → taxonomy design, multi-issue detection, PII redaction, summarize-don't-truncate, the repair loop.
-
-## 31. Demo script (~7–8 minutes)
-
-1. **(30s) Problem** — the Tier-1 lead story.
-2. **(1m) The app** — open `http://localhost:3000`; paste an example chip; watch the card settle; point out the processing time.
-3. **(1.5m) Clean routing** — a High security ticket, a Medium single-user login, a Low feature request — different teams, colour-coded.
-4. **(1.5m) Headline feature** — paste the multi-issue example → **three cards**; expand **View Structured JSON** to show the exact contract.
-5. **(1.5m) Edge cases** — angry, vague, ambiguous; a ticket with an email + card number to show **redaction**; a >300-word paste to show **summarization** (higher time); empty box to show the frontend guard.
-6. **(1m) Reliability** — route the same ticket twice (same decision); bad API key → graceful Human-Triage fallback.
-7. **(1m) Evidence** — run the batch runner ("all valid, counts correct"); show the before/after table + live processing time.
-8. **(30s) Honesty** — one limitation + point at the roadmap.
-
-> Make sure both `uvicorn` (backend) and `npm run dev` (frontend) are already running before the demo — there's no hosted instance to fall back on.
-
-## 32. Presentation / slide outline
-
-A tight deck a mentor/senior will respect:
-1. **Title** — Smart Ticket Router · your name · the one-line pitch.
-2. **The problem** — manual triage is slow, inconsistent, the bottleneck.
-3. **The solution** — the high-level diagram (Part 3).
-4. **Architecture** — the detailed diagram + the LLM-vs-backend split (Parts 4 & 6).
-5. **The taxonomy** — 9 categories → teams; "category user-facing, team internal" (Part 7).
-6. **Priority model** — business impact; same category, different priority (Part 8).
-7. **The contract** — the fixed `{issues:[…]}` JSON; single vs multiple (Part 9).
-8. **Beyond the brief** — multi-issue, PII redaction, summarize-don't-truncate (Parts 10–12).
-9. **Reliability** — repair loop, fallback, temp-0 consistency (Part 15).
-10. **Speed** — before/after table + live processing time (Parts 16 & 25).
-11. **The UI** — screenshots: cards + JSON toggle (Part 18).
-12. **Repos & deployment** — two repos (Parts 21–22); deployment considered and declined, runs locally only (Part 23).
-13. **What's next** — the roadmap (Part 28).
-14. **What I learned** — hardest part, what I'd change (Part 27).
-
-## 33. Glossary
+## 29. Glossary
 
 - **Issue object** — one detected problem: `{id, category, priority, assigned_team, reasoning}`.
 - **Response contract** — the fixed API shape `{ "issues": [...], "processing_time_ms": ... }`.
@@ -1051,66 +983,4 @@ A tight deck a mentor/senior will respect:
 
 ---
 
-# Appendix A — Decision log / revision history
-
-| Version | What was confirmed |
-|---|---|
-| Early | Single routing decision per ticket; Streamlit UI; category `confidence` field; truncate long tickets. |
-| Mid | Frontend switched to React/Next.js; empty input handled on frontend; English-only routing; strict MVP scope. |
-| Later | Multi-issue output; long tickets summarized (not truncated); PII redaction promoted to MVP; few-shot fixed at 6–8; `confidence` removed → roadmap. |
-| **1.0 (this doc)** | Final response contract `{issues:[...]}` (same shape single/multiple); backend-generated ids; final 9-category taxonomy + team mapping; priority = business impact, independent of category; LLM-vs-backend responsibility split; end-to-end processing-time measurement shown in CLI + frontend; issue cards + collapsible "View Structured JSON" as the frontend presentation; two repos + Render/Vercel deployment. |
-| **1.1 (implementation deltas)** | Monorepo, not two repos. LLM: OpenAI `gpt-4o-mini`. Frontend palette overridden to colorful/vibrant per stakeholder ask (Part 18 specified scarce color). Added: light/dark theme toggle (`localStorage`-persisted) and a simulated staged-progress loading indicator (no real token-streaming — output is structured JSON, not streamable prose). |
-| **1.2 (mentor review)** | Added internal-only `confidence` field per issue (backend/CLI debug output only, never in the API response — see `backend/schema.py`). Frontend redesigned: "The Verdict Desk" (colorful glass-card, centered layout) replaced by "Dispatch Slip" (split-screen: real Three.js glass-shard rig reacting to live routing state + a paper-slip panel, priority-only color, no per-category icons) — mentor feedback called v1 generic/"AI-developed"; see `frontend/CLAUDE.md` for the full design rationale. `three` added as a real dependency. Bounded OpenAI calls with a 20s client timeout. |
-| **1.3 (deployment decision)** | Deployment (Render for the backend, Vercel for the frontend) was considered and **explicitly declined** — decided out of scope for this MVP. The app runs **locally only**: no host, no live URL (see Part 23). |
-| **1.4 (frontend redesign v3)** | Frontend redesigned again: "Dispatch Slip" (split-screen paper/glass-rig) replaced by "Pipeline" — an ops-console/flow-diagram layout (three-column grid: inbound feed, animated `redact → classify → validate` pipeline stages, "team lanes" results column, full-width raw-JSON bar), mentor-specified via an exact reference screenshot rather than an open brief. Prototyped as a standalone Artifact first, confirmed by the user, then ported. Removed the Three.js rig and `three` dependency (not used in this version); replaced with a 2D dot-grid background and animated dashed SVG lines. Also added `confidence` (backend-only, see 1.2) and hardened the system prompt against ticket-text prompt injection (see `backend/prompts.py`, `backend/CLAUDE.md`). |
-| **1.5 (is_ticket field)** | Added `is_ticket: bool` per issue — unlike `confidence`, this one IS part of the public API response (contract shape unchanged: still `{issues:[...]}`, `category`/`priority`/`assigned_team` always populated). `false` marks a message with no real support content (greeting/small-talk, or harmful/abusive text) — `reasoning` becomes a short direct reply instead of a routing justification, and the frontend renders it as plain text instead of an issue card. `category`/`priority`/`assigned_team` stay `General / Uncategorized`/`Low`/Human Triage in that case so the shape never branches. See `backend/prompts.py` for the exact rule + few-shot examples and `backend/CLAUDE.md`/`frontend/CLAUDE.md` for the full contract note. Found and fixed a false positive during adversarial testing: `"how do I reset my password?"` (a legitimate self-service request) was returning `is_ticket: false` 4/4 runs — the model was conflating "answerable via help docs" with "not a real ticket." Fixed with a rule clarification + one corrective few-shot example; re-verified 4/4 stable, full 27-ticket suite still passes. This kind of false positive was the accepted risk of this feature going in — one example fixes the case found, it doesn't prove every phrasing is safe. |
-
-# Appendix B — Starter `CLAUDE.md`
-
-Drop this at the root of the **backend** repo (and a trimmed copy in the frontend repo) so any AI coding assistant picks up your conventions. Keep it updated as decisions change — that habit is itself good engineering.
-
-```markdown
-# Smart Ticket Router — project context for AI assistants
-
-## What this is
-A support-ticket router. Input: free-text ticket. Output: a fixed JSON shape
-{ "issues": [ {id, category, priority, assigned_team, reasoning} ], "processing_time_ms": n }.
-
-## Non-negotiable rules
-- Response shape NEVER changes; only the issues array length changes.
-- LLM classifies (category, priority, reasoning) only.
-- Backend owns: PII redaction, word count, summarization trigger, JSON validation,
-  issue id generation, category→team mapping, timing, response assembly.
-- Categories are a CLOSED set of 9 (see taxonomy.py). Model never invents one.
-- Priority = business impact, NOT tone, NOT category.
-- PII is redacted (regex) BEFORE any LLM call.
-- No `confidence` field (roadmap).
-- English-only routing.
-
-## The 9 categories → teams
-Authentication & Login→Identity Team · Billing & Payments→Finance Team ·
-Technical Bug→Engineering Team · Performance & Availability→Platform Team ·
-Feature Request→Product Team · Account Management→Customer Success Team ·
-Security & Access→Security Team · Orders & Operations→Operations Team ·
-General / Uncategorized→Human Triage (fallback).
-
-## Long tickets
-<= ~300 words → route directly. > ~300 words → summarize (one LLM call) then route.
-Never truncate or chunk.
-
-## Stack
-Backend: Python, FastAPI, Pydantic, temperature 0, small fast model.
-Frontend: Next.js + TypeScript + Tailwind. Cards + collapsible JSON. Empty input
-blocked on the frontend. Show processing time after success.
-
-## How to run
-Backend: `uvicorn main:app --reload` (:8000). CLI: `python cli.py "…"`.
-Frontend: `npm run dev` (:3000), needs NEXT_PUBLIC_API_URL.
-
-## Full source of truth
-See docs/MASTER_DOC.md.
-```
-
----
-
-*End of document. This is the source of truth — when code and this document disagree, update whichever is wrong and record it in Appendix A. Keep it in `docs/MASTER_DOC.md` and treat it as living.*
+*End of document. This is the source of truth — when code and this document disagree, update whichever is wrong. Keep it in `docs/Master_doc.md` and treat it as living.*
