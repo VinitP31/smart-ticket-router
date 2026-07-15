@@ -120,7 +120,7 @@ General/Uncategorized), each mapped to one team.
 ## Testing
 
 ```bash
-cd backend && pytest tests/test_router.py -v      # 27 sample tickets through the real pipeline
+(cd backend && pytest tests/test_router.py -v)    # 27 sample tickets through the real pipeline
 ./backend/scripts/test_failure_modes.sh           # bad/missing API key, bad model — never a 5xx
 ```
 
