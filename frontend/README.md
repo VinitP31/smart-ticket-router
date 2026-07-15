@@ -32,15 +32,15 @@ Opens at `http://localhost:3000`.
 
 ## Try it
 
-1. Click one of the example chips (e.g. "multi-issue") to fill the ticket box, or paste
-   your own ticket text.
-2. Click **Stamp & route →** (or ⌘/Ctrl+Enter). A 4-stage progress checklist plays while
-   the request is in flight, and the Three.js rig on the left resets to one shard.
-3. Read the issue card(s) — one per detected issue, each with a priority "stamp" (High/
-   Medium/Low) — and watch the rig's glass shards tint to match.
-4. Click **view raw response.json** to see the exact backend response, verbatim.
-5. Toggle light/dark mode with the button (top right of the paper panel) — persists across
-   reloads.
+1. Click one of the sample-ticket cards (e.g. "TKT-S04") in the left column to load it, or
+   paste your own ticket text.
+2. Click **Route ticket →** (or ⌘/Ctrl+Enter). The pipeline stage boxes in the middle column
+   animate `redact → classify → validate` while the request is in flight.
+3. Read the card(s) in the "Team lanes" column on the right — one per detected issue, each
+   showing the assigned team, category, and a priority pill (High/Medium/Low).
+4. Click the **Raw JSON response** bar at the bottom to see the exact backend response,
+   verbatim.
+5. Toggle light/dark mode with the button (top right) — persists across reloads.
 
 To see the "service unavailable" state: stop the backend (or point `NEXT_PUBLIC_API_URL` at
 a dead URL) and submit a ticket.
@@ -56,9 +56,9 @@ All three should report clean with no errors.
 
 ## What it renders
 
-- One card per issue in the backend's response — `category`, `priority`, `assigned_team`,
-  `reasoning` — keyed by `issue.id` (never array index).
-- Processing time next to a "routed —" label (`X.XXs`).
+- One "team lane" card per issue in the backend's response — `category`, `priority`,
+  `assigned_team`, `reasoning` — keyed by `issue.id` (never array index).
+- Processing time next to the "Team lanes" label.
 - The backend never returns a 5xx — a routing failure still comes back as a normal
   Human-Triage card. The only true error state is the frontend being unable to reach the
   backend at all.
