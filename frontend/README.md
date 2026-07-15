@@ -9,7 +9,7 @@ Full design/architecture reference: [`../docs/Master_doc.md`](../docs/Master_doc
 ## Prerequisites
 
 - Node.js 20+
-- The backend running (locally or deployed) — see [`../backend/README.md`](../backend/README.md)
+- The backend running locally — see [`../backend/README.md`](../backend/README.md)
 
 ## Setup
 
@@ -52,14 +52,6 @@ npx tsc --noEmit
 npm run build
 ```
 All three should report clean with no errors.
-
-## Deploy (Vercel)
-
-- Import this repo on Vercel; it auto-detects Next.js — no build command overrides needed.
-- **Root directory:** `frontend` (this is a monorepo — backend lives alongside it).
-- **Environment variable:** `NEXT_PUBLIC_API_URL` → the deployed backend's Render URL.
-- After deploying, go back to the backend's `ALLOWED_ORIGINS` env var and add this
-  frontend's Vercel URL, then redeploy the backend so CORS allows it.
 
 ## What it renders
 
