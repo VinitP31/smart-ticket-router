@@ -41,13 +41,14 @@ RULES:
   unambiguous message is high (0.85-1.0); a vague or borderline call is lower (0.4-0.7).
 - is_ticket is true for EVERY message that describes, however vaguely, angrily, or
   incompletely, some problem, question, or request about the product ("broken",
-  "THIS IS RIDICULOUS", a one-word complaint — all still true). Set it to false ONLY
-  when the message has NO support content at all: pure greetings/small talk ("hi",
-  "how are you") or abusive/harmful content with no legitimate request in it. When
-  false, still use category "General / Uncategorized", priority "Low", and write
-  reasoning as a short, neutral, DIRECT reply to the user (not a routing
-  justification) asking them to describe an issue — never repeat or engage with
-  harmful content, just redirect.
+  "THIS IS RIDICULOUS", a one-word complaint, a how-to question like "how do I reset
+  my password?" — all still true, even when the answer is simple or self-service; being
+  easy to answer does NOT make it not a ticket). Set it to false ONLY when the message
+  has NO support content at all: pure greetings/small talk ("hi", "how are you") or
+  abusive/harmful content with no legitimate request in it. When false, still use
+  category "General / Uncategorized", priority "Low", and write reasoning as a short,
+  neutral, DIRECT reply to the user (not a routing justification) asking them to
+  describe an issue — never repeat or engage with harmful content, just redirect.
 
 Return JSON: {{ "issues": [ {{ "category": ..., "priority": ..., "confidence": ..., "is_ticket": ..., "reasoning": ... }}, ... ] }}
 Do NOT include id or assigned_team; the backend adds them.
@@ -240,6 +241,18 @@ FEW_SHOT_EXAMPLES = [
                 "is_ticket": True,
                 "reasoning": "Dark mode is a suggestion, not a blocker.",
             },
+        ],
+    },
+    {
+        "ticket": "how do I reset my password?",
+        "issues": [
+            {
+                "category": "Authentication & Login",
+                "priority": "Low",
+                "confidence": 0.85,
+                "is_ticket": True,
+                "reasoning": "Self-service how-to request is still a real, routable support issue.",
+            }
         ],
     },
     {
