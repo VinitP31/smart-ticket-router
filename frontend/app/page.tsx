@@ -95,7 +95,7 @@ export default function Home() {
             recomputeKey={recomputeKey}
           />
 
-          <div>
+          <div className="relative">
             <div className="mb-3 font-mono text-[11px] font-semibold tracking-[0.14em] text-label uppercase">
               Inbound feed
             </div>
@@ -103,11 +103,11 @@ export default function Home() {
             <SampleTickets value={ticket} onChange={setTicket} />
           </div>
 
-          <div ref={originRef} className="h-full">
+          <div ref={originRef} className="relative h-full">
             <RoutingProgress key={runId} active={status === "loading"} />
           </div>
 
-          <div>
+          <div className="relative">
             <div className="mb-3 flex items-center gap-2.5 font-mono text-[11px] font-semibold tracking-[0.14em] text-label uppercase">
               Team lanes
               {status === "success" && result && <ProcessingTime processingTimeMs={result.processing_time_ms} />}
