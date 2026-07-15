@@ -1,6 +1,6 @@
 import type { Issue } from "@/lib/types";
 
-const PRIORITY_COLOR: Record<Issue["priority"], string> = {
+export const PRIORITY_COLOR: Record<Issue["priority"], string> = {
   High: "var(--color-high)",
   Medium: "var(--color-medium)",
   Low: "var(--color-low)",

@@ -77,7 +77,11 @@ export default function Home() {
             <SampleTickets value={ticket} onChange={setTicket} />
           </div>
 
-          <RoutingProgress key={runId} active={status === "loading"} />
+          <RoutingProgress
+            key={runId}
+            active={status === "loading"}
+            issues={status === "success" ? result?.issues : null}
+          />
 
           <div>
             <div className="mb-3 flex items-center gap-2.5 font-mono text-[11px] font-semibold tracking-[0.14em] text-label uppercase">

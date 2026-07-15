@@ -1,11 +1,28 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { PRIORITY_COLOR } from "@/components/IssueCard";
+import type { Issue } from "@/lib/types";
 
 const STAGES = ["redact", "classify", "validate"];
 const STAGE_INTERVAL_MS = 480;
+const Y_TOP = 110;
+const Y_BOTTOM = 450;
+const Y_MID = 280;
+const DEFAULT_LINES = [
+  { y: Y_TOP, color: "var(--color-high)", duration: "1.1s" },
+  { y: Y_MID, color: "var(--color-medium)", duration: "1.5s" },
+  { y: Y_BOTTOM, color: "var(--color-low)", duration: "1.9s" },
+];
+const DURATIONS = ["1.1s", "1.5s", "1.9s", "1.3s", "1.7s"];
 
-export default function RoutingProgress({ active }: { active: boolean }) {
+export default function RoutingProgress({
+  active,
+  issues,
+}: {
+  active: boolean;
+  issues?: Issue[] | null;
+}) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
@@ -16,7 +33,18 @@ export default function RoutingProgress({ active }: { active: boolean }) {
     return () => clearInterval(timer);
   }, [active]);
 
-  const flowing = active || index >= STAGES.length;
+  const hasResult = !!issues && issues.length > 0;
+  const flowing = active || hasResult;
+
+  // One line per resulting issue, evenly spread and colored by that issue's
+  // priority — a single issue gets one straight line, not a fixed fan of 3.
+  const lines = hasResult
+    ? issues!.map((issue, i) => ({
+        y: issues!.length === 1 ? Y_MID : Y_TOP + (i * (Y_BOTTOM - Y_TOP)) / (issues!.length - 1),
+        color: PRIORITY_COLOR[issue.priority],
+        duration: DURATIONS[i % DURATIONS.length],
+      }))
+    : DEFAULT_LINES;
 
   return (
     <div className="relative flex h-full min-h-[220px] flex-col items-center justify-center gap-3.5">
@@ -27,9 +55,14 @@ export default function RoutingProgress({ active }: { active: boolean }) {
         style={{ opacity: flowing ? 1 : 0.25 }}
         aria-hidden="true"
       >
-        <path className="flow-path" d="M0,280 C90,280 90,110 200,110 L560,110" style={{ stroke: "var(--color-high)", animationDuration: "1.1s" }} />
-        <path className="flow-path" d="M0,280 L560,280" style={{ stroke: "var(--color-medium)", animationDuration: "1.5s" }} />
-        <path className="flow-path" d="M0,280 C90,280 90,450 200,450 L560,450" style={{ stroke: "var(--color-low)", animationDuration: "1.9s" }} />
+        {lines.map((line, i) => (
+          <path
+            key={i}
+            className="flow-path"
+            d={`M0,${Y_MID} C90,${Y_MID} 90,${line.y} 200,${line.y} L560,${line.y}`}
+            style={{ stroke: line.color, animationDuration: line.duration }}
+          />
+        ))}
       </svg>
 
       {STAGES.map((stage, i) => {
