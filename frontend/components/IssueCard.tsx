@@ -11,30 +11,31 @@ export default function IssueCard({ issue, index }: { issue: Issue; index: numbe
 
   return (
     <li
-      className="card-settle border-t-2 py-5"
-      style={{ animationDelay: `${index * 90}ms`, borderColor: "var(--color-ink)" }}
+      className="card-settle rounded-xl border-l-[3px] border-y border-r p-4"
+      style={{
+        animationDelay: `${index * 90}ms`,
+        borderLeftColor: priorityColor,
+        borderTopColor: "var(--color-border)",
+        borderRightColor: "var(--color-border)",
+        borderBottomColor: "var(--color-border)",
+        backgroundColor: "var(--color-card)",
+      }}
     >
-      <div className="flex items-baseline justify-between gap-3">
+      <div className="flex items-baseline justify-between gap-2.5">
         <div>
-          <p className="font-serif text-[13px] text-ink-faint italic">
-            issue no. {String(issue.id).padStart(2, "0")}
-          </p>
-          <h3 className="mt-0.5 font-serif text-xl font-bold text-ink">{issue.category}</h3>
+          <div className="font-mono text-[10.5px] tracking-wide text-ink-faint uppercase">
+            {issue.assigned_team}
+          </div>
+          <h3 className="mt-0.5 text-[15.5px] font-bold text-ink">{issue.category}</h3>
         </div>
         <span
-          className="shrink-0 rotate-[-3deg] border-2 px-2.5 py-1 font-mono text-[11px] tracking-[0.1em] whitespace-nowrap uppercase"
-          style={{ color: priorityColor, borderColor: priorityColor }}
+          className="shrink-0 rounded-full px-2.5 py-1 font-mono text-[10px] tracking-wide whitespace-nowrap text-white uppercase"
+          style={{ backgroundColor: priorityColor }}
         >
           {issue.priority}
         </span>
       </div>
-
-      <p className="mt-2.5 mb-1.5 text-[11.5px] tracking-wide text-ink-soft">
-        routed to → <b className="text-ink">{issue.assigned_team}</b>
-      </p>
-      <p className="max-w-[58ch] font-serif text-[15px] leading-relaxed text-ink">
-        {issue.reasoning}
-      </p>
+      <p className="mt-2 text-[13px] leading-relaxed text-ink-soft">{issue.reasoning}</p>
     </li>
   );
 }

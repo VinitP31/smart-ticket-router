@@ -2,8 +2,7 @@
 
 import { useEffect, useState } from "react";
 
-const STAGES = ["reading ticket", "classifying issues", "assessing priority", "assigning teams"];
-
+const STAGES = ["redact", "classify", "validate"];
 const STAGE_INTERVAL_MS = 480;
 
 export default function RoutingProgress({ active }: { active: boolean }) {
@@ -17,33 +16,39 @@ export default function RoutingProgress({ active }: { active: boolean }) {
     return () => clearInterval(timer);
   }, [active]);
 
-  if (!active) return null;
-
   return (
-    <div aria-hidden="true" className="card-settle mt-6 flex flex-col">
+    <div className="flex flex-col items-center gap-3.5 pt-11">
       {STAGES.map((stage, i) => {
         const done = i < index;
-        const current = i === index;
+        const isActive = i === index && active;
         return (
           <div
             key={stage}
-            className="flex items-center gap-3 border-b border-dotted py-2.5 text-[12.5px]"
+            className="w-full max-w-[150px] rounded-xl border p-3.5 text-center transition-shadow"
             style={{
-              borderColor: "var(--color-rule)",
-              color: done || current ? "var(--color-ink)" : "var(--color-ink-faint)",
+              borderColor: isActive ? "var(--color-accent-1)" : "var(--color-border)",
+              backgroundColor: "var(--color-card)",
+              boxShadow: isActive ? "0 0 0 3px rgba(124,134,240,0.18)" : "none",
             }}
           >
-            <span
-              className="w-5 font-mono text-[10px]"
-              style={{ color: current ? "var(--color-stamp)" : undefined }}
+            <div className="text-[14.5px] font-bold text-ink">{stage}</div>
+            <div
+              className="mt-0.5 font-mono text-[11px]"
+              style={{
+                color: done ? "var(--color-low)" : isActive ? "var(--color-accent-1)" : "var(--color-ink-faint)",
+              }}
             >
-              {String(i + 1).padStart(2, "0")}
-              {done && <span style={{ color: "var(--color-low)" }}> ✓</span>}
-            </span>
-            <span style={{ color: current ? "var(--color-stamp)" : undefined }}>{stage}</span>
+              {done ? "done" : isActive ? "running" : "idle"}
+            </div>
           </div>
         );
       })}
+      <div
+        className="mt-2.5 rounded-full border px-4 py-2 font-mono text-[11.5px] whitespace-nowrap text-ink-soft"
+        style={{ borderColor: "var(--color-border)", backgroundColor: "var(--color-card)" }}
+      >
+        pipeline: redact → classify → validate
+      </div>
     </div>
   );
 }
