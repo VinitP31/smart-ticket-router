@@ -80,6 +80,10 @@ Full setup, troubleshooting, and CLI usage: [`backend/README.md`](backend/README
   deliberate UI states — including a simulated staged-progress indicator instead of real
   token-streaming, because the response is structured JSON that must be fully validated
   before it's safe to render (streaming partial JSON would risk showing garbage mid-parse).
+- **Greetings and harmful input don't get a fake routing decision.** A message with no real
+  support content ("hi", or abusive text) still returns the same JSON shape, but with
+  `is_ticket: false` and a short direct reply instead of a routing justification — the frontend
+  renders it as plain text, not an issue card.
 
 ## Stack
 
@@ -103,7 +107,7 @@ smart-ticket-router/
 ```
 POST /route
   body: { "ticket": "<text>" }
-  200:  { "issues": [{id, category, priority, assigned_team, reasoning}], "processing_time_ms": int }
+  200:  { "issues": [{id, category, priority, assigned_team, is_ticket, reasoning}], "processing_time_ms": int }
 
 GET /health
   200: { "status": "ok" }

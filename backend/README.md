@@ -58,6 +58,7 @@ Expected response:
       "category": "Billing & Payments",
       "priority": "High",
       "assigned_team": "Finance Team",
+      "is_ticket": true,
       "reasoning": "Duplicate charge is a direct financial loss to the customer."
     }
   ],

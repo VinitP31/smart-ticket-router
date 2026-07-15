@@ -58,6 +58,8 @@ All three should report clean with no errors.
 
 - One "team lane" card per issue in the backend's response — `category`, `priority`,
   `assigned_team`, `reasoning` — keyed by `issue.id` (never array index).
+- A greeting or harmful message (`is_ticket: false`) renders as a plain reply instead of a
+  card — try typing "hi" or similar small talk.
 - Processing time next to the "Team lanes" label.
 - The backend never returns a 5xx — a routing failure still comes back as a normal
   Human-Triage card. The only true error state is the frontend being unable to reach the
