@@ -83,17 +83,6 @@ pytest tests/test_router.py -v
 Runs 27 sample tickets (`data/sample_tickets.json`) through the real pipeline —
 needs a working `OPENAI_API_KEY` in `.env`, makes real API calls.
 
-## Deploy (Render)
-
-- **Build command:** `pip install -r requirements.txt`
-- **Start command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-- **Environment variables:** `OPENAI_API_KEY`, `LLM_MODEL`, `ALLOWED_ORIGINS`
-  (set this to the deployed frontend's URL once it exists; comma-separate if
-  keeping `http://localhost:3000` alongside it)
-
-Render's free tier spins down when idle — hit `/health` once before a demo to
-warm it up.
-
 ## Contract
 
 - `POST /route` — body `{"ticket": "<text>"}` → `200 OK` always (never a 5xx;
