@@ -34,6 +34,8 @@ def main() -> None:
         print(f"      Assigned to  : {issue['assigned_team']}")
         if i < len(confidences):
             print(f"      Confidence   : {confidences[i]:.2f}")
+        if not issue["is_ticket"]:
+            print("      Is ticket    : False (greeting/harmful — not a real support issue)")
         print(f"      Reasoning    : {issue['reasoning']}\n")
 
     print(f"Response Time: {elapsed_ms / 1000:.2f} seconds ({elapsed_ms} ms)")

@@ -39,8 +39,17 @@ RULES:
 - reasoning must be ONE line, <= 160 chars, stating the single deciding factor.
 - confidence is YOUR certainty in this issue's category, from 0.0 to 1.0. A clear,
   unambiguous message is high (0.85-1.0); a vague or borderline call is lower (0.4-0.7).
+- is_ticket is true for EVERY message that describes, however vaguely, angrily, or
+  incompletely, some problem, question, or request about the product ("broken",
+  "THIS IS RIDICULOUS", a one-word complaint — all still true). Set it to false ONLY
+  when the message has NO support content at all: pure greetings/small talk ("hi",
+  "how are you") or abusive/harmful content with no legitimate request in it. When
+  false, still use category "General / Uncategorized", priority "Low", and write
+  reasoning as a short, neutral, DIRECT reply to the user (not a routing
+  justification) asking them to describe an issue — never repeat or engage with
+  harmful content, just redirect.
 
-Return JSON: {{ "issues": [ {{ "category": ..., "priority": ..., "confidence": ..., "reasoning": ... }}, ... ] }}
+Return JSON: {{ "issues": [ {{ "category": ..., "priority": ..., "confidence": ..., "is_ticket": ..., "reasoning": ... }}, ... ] }}
 Do NOT include id or assigned_team; the backend adds them.
 """
 
@@ -58,6 +67,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Billing & Payments",
                 "priority": "High",
                 "confidence": 0.95,
+                "is_ticket": True,
                 "reasoning": "Duplicate charge is a direct financial loss to the customer.",
             }
         ],
@@ -69,6 +79,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Security & Access",
                 "priority": "High",
                 "confidence": 0.95,
+                "is_ticket": True,
                 "reasoning": "Suspicious login is a potential account compromise.",
             }
         ],
@@ -80,6 +91,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Performance & Availability",
                 "priority": "High",
                 "confidence": 0.95,
+                "is_ticket": True,
                 "reasoning": "Full outage blocking many users' work.",
             }
         ],
@@ -91,6 +103,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Feature Request",
                 "priority": "Low",
                 "confidence": 0.95,
+                "is_ticket": True,
                 "reasoning": "Enhancement suggestion, no workflow blocked.",
             }
         ],
@@ -102,6 +115,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "General / Uncategorized",
                 "priority": "Low",
                 "confidence": 0.5,
+                "is_ticket": True,
                 "reasoning": "Angry but no concrete problem stated; tone ignored for priority.",
             }
         ],
@@ -113,6 +127,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "General / Uncategorized",
                 "priority": "Low",
                 "confidence": 0.35,
+                "is_ticket": True,
                 "reasoning": "Too vague to classify; needs clarification from the customer.",
             }
         ],
@@ -124,6 +139,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Technical Bug",
                 "priority": "Medium",
                 "confidence": 0.9,
+                "is_ticket": True,
                 "reasoning": "Reproducible crash with error; treated as one issue, not two.",
             }
         ],
@@ -135,6 +151,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Account Management",
                 "priority": "Low",
                 "confidence": 0.9,
+                "is_ticket": True,
                 "reasoning": "Routine profile change, no urgency.",
             }
         ],
@@ -146,6 +163,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Orders & Operations",
                 "priority": "Medium",
                 "confidence": 0.85,
+                "is_ticket": True,
                 "reasoning": "One user's delivery affected; workaround is waiting or contacting carrier.",
             }
         ],
@@ -157,6 +175,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Authentication & Login",
                 "priority": "Medium",
                 "confidence": 0.9,
+                "is_ticket": True,
                 "reasoning": "Single user's login blocked; not a wider outage.",
             }
         ],
@@ -168,6 +187,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Technical Bug",
                 "priority": "Medium",
                 "confidence": 0.8,
+                "is_ticket": True,
                 "reasoning": "Sarcastic tone ignored; one user's export feature broken with a workaround.",
             }
         ],
@@ -179,6 +199,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Performance & Availability",
                 "priority": "Low",
                 "confidence": 0.6,
+                "is_ticket": True,
                 "reasoning": "Angry tone ignored; minor one-off slowness, no real impact.",
             }
         ],
@@ -190,6 +211,7 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Billing & Payments",
                 "priority": "High",
                 "confidence": 0.7,
+                "is_ticket": True,
                 "reasoning": "Primary intent is the financial impact of the double charge.",
             }
         ],
@@ -201,20 +223,47 @@ FEW_SHOT_EXAMPLES = [
                 "category": "Billing & Payments",
                 "priority": "Medium",
                 "confidence": 0.85,
+                "is_ticket": True,
                 "reasoning": "Duplicate charge reported without urgency escalation.",
             },
             {
                 "category": "Authentication & Login",
                 "priority": "Medium",
                 "confidence": 0.85,
+                "is_ticket": True,
                 "reasoning": "Single user locked out; likely has a workaround.",
             },
             {
                 "category": "Feature Request",
                 "priority": "Low",
                 "confidence": 0.9,
+                "is_ticket": True,
                 "reasoning": "Dark mode is a suggestion, not a blocker.",
             },
+        ],
+    },
+    {
+        "ticket": "hi, how are you?",
+        "issues": [
+            {
+                "category": "General / Uncategorized",
+                "priority": "Low",
+                "confidence": 0.9,
+                "is_ticket": False,
+                "reasoning": "Hi! I'm a support ticket router. Please describe an issue and I'll route it.",
+            }
+        ],
+    },
+    {
+        "ticket": "You're all useless, I hope your company burns to the ground.",
+        "issues": [
+            {
+                "category": "General / Uncategorized",
+                "priority": "Low",
+                "confidence": 0.9,
+                "is_ticket": False,
+                "reasoning": "This doesn't describe a support issue. Please share what went wrong and I'll route it.",
+            }
         ],
     },
 ]

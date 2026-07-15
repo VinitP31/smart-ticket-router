@@ -31,6 +31,7 @@ def fallback_route(reason: str) -> dict:
                 "category": Category.GENERAL.value,
                 "priority": Priority.MEDIUM.value,
                 "assigned_team": TEAM_BY_CATEGORY[Category.GENERAL],
+                "is_ticket": True,
                 "reasoning": f"Automatic routing unavailable ({reason}); requires manual review.",
             }
         ]
@@ -44,6 +45,7 @@ def _assemble(model_output: RoutingModelOutput) -> dict:
             "category": issue.category.value,
             "priority": issue.priority.value,
             "assigned_team": TEAM_BY_CATEGORY[issue.category],
+            "is_ticket": issue.is_ticket,
             "reasoning": issue.reasoning,
         }
         for idx, issue in enumerate(model_output.issues, start=1)
