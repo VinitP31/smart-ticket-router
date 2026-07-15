@@ -6,9 +6,9 @@
 
 ---
 
-> **What this document is.** The single source of truth for the Smart Ticket Router. Every architectural, product, UI/UX, backend, LLM, security, and deployment decision that has been confirmed lives here. Use it while coding, while learning, when you hit an error, when preparing your demo or slides, and when walking a mentor or senior through the system.
+> **What this document is.** The single source of truth for the Smart Ticket Router. Every architectural, product, UI/UX, backend, LLM, and security decision that has been confirmed lives here, plus the deployment question and why it was declined. Use it while coding, while learning, when you hit an error, when preparing your demo or slides, and when walking a mentor or senior through the system.
 >
-> **How to read it.** Parts 1–6 are the mental model (read first, and before any demo). Parts 7–16 are the confirmed design & contracts (the rules the code must obey). Parts 17–19 are backend/frontend/security build specs. Parts 20–23 cover tech stack, GitHub, and deployment end to end. Parts 24–33 are testing, trade-offs, rubric prep, and demo material. The appendices hold a decision log and a ready-to-use `CLAUDE.md`.
+> **How to read it.** Parts 1–6 are the mental model (read first, and before any demo). Parts 7–16 are the confirmed design & contracts (the rules the code must obey). Parts 17–19 are backend/frontend/security build specs. Parts 20–23 cover tech stack, GitHub, and the (declined) deployment question. Parts 24–33 are testing, trade-offs, rubric prep, and demo material. The appendices hold a decision log and a ready-to-use `CLAUDE.md`.
 >
 > **Golden rules that must never be broken (memorize these five):**
 > 1. The API always returns the **same shape** — `{ "issues": [ ... ] }`. Only the array length changes.
@@ -50,7 +50,7 @@
 20. Tech stack summary
 21. Repository strategy (two repos)
 22. Version control & GitHub (step by step)
-23. Deployment — Render (backend) + Vercel (frontend)
+23. Deployment (not applicable — runs locally only)
 
 **Part V — Prove it**
 24. Testing strategy
@@ -748,11 +748,11 @@ Two non-negotiables: the API base URL comes from `NEXT_PUBLIC_API_URL` (never ha
 
 ## 19. Security, secrets & authentication
 
-**LLM provider authentication.** The backend authenticates to the LLM provider with an **API key** stored in an environment variable (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`). The key lives **only on the backend**, never in the frontend, never in code, never in git. Locally it's in `.env` (git-ignored); in production it's set in the host's env-var settings (Render). Commit only `.env.example` with key *names*.
+**LLM provider authentication.** The backend authenticates to the LLM provider with an **API key** stored in an environment variable (`ANTHROPIC_API_KEY` / `OPENAI_API_KEY`). The key lives **only on the backend**, never in the frontend, never in code, never in git. It's in `.env` (git-ignored) — there's no production host, so no other env-var store is needed (see Part 23). Commit only `.env.example` with key *names*.
 
-**Secrets checklist (evaluated — M4B5/M4E3):** `.env` in `.gitignore`; `.env.example` committed with names only; no keys anywhere in source; production keys set in the host dashboard.
+**Secrets checklist (evaluated — M4B5/M4E3):** `.env` in `.gitignore`; `.env.example` committed with names only; no keys anywhere in source.
 
-**CORS (access control between the two apps).** The backend must allow the frontend's origin. In dev that's `http://localhost:3000`; in production it's your Vercel URL. Drive this from `ALLOWED_ORIGINS` (env), so you never hardcode a domain. Note the deploy gotcha in Part 23: you set this *after* the frontend URL exists.
+**CORS (access control between the two apps).** The backend must allow the frontend's origin. `ALLOWED_ORIGINS` (env) defaults to `http://localhost:3000` — that's the only origin that ever needs to be allowed, since nothing is deployed (Part 23).
 
 **Public endpoint protection (honest MVP note).** The `/route` endpoint is **open** in the MVP — anyone with the URL could call it and consume your LLM budget. That is acceptable for a graded demo but is called out here on purpose. Production mitigations (roadmap): a shared secret/API key on the endpoint, per-IP rate limiting, and a usage cap.
 
@@ -772,10 +772,9 @@ Two non-negotiables: the API base URL comes from `NEXT_PUBLIC_API_URL` (never ha
 | Backend | Python 3.11+, FastAPI | API, pipeline orchestration, all deterministic logic |
 | Validation | Pydantic v2 | Enforce the JSON contract, enum categories/priorities |
 | LLM | Anthropic or OpenAI (small, fast model) | Issue detection, classification, priority, reasoning |
-| Secrets | python-dotenv (`.env`) locally; host env vars in prod | Keep API keys out of code/git |
+| Secrets | python-dotenv (`.env`) locally | Keep API keys out of code/git |
 | Lint/format | ruff (backend) / ESLint (frontend) | Conventions (M4E4) |
-| Backend host | Render | Public API |
-| Frontend host | Vercel | Public UI |
+| Hosting | **None — local only** (see Part 23) | No public API, no public UI |
 | Version control | Git + GitHub (two repos) | Source, history, evaluation |
 
 ## 21. Repository strategy (two repos)
@@ -784,7 +783,7 @@ Per the confirmed decision, the project uses **two separate repositories**:
 - `smart-ticket-router-backend` — FastAPI service + CLI + this doc under `/docs`.
 - `smart-ticket-router-frontend` — Next.js app.
 
-**Why two repos here:** the backend deploys to Render and the frontend to Vercel — separate hosts, separate build systems, separate env vars. Two repos keep each deployment clean, let each have its own README (both are evaluated), and avoid Vercel/Render trying to build the wrong half. **Trade-off:** you manage two repos and keep their contracts in sync manually (this document is what keeps them in sync). A **monorepo** would be simpler to clone and version together but complicates the two independent deployments — reasonable, just not what we chose. Put a link to the *other* repo at the top of each README so a reviewer can find both.
+**Why two repos here:** the original two-repo plan assumed the backend would deploy to Render and the frontend to Vercel — separate hosts, separate build systems, separate env vars, each with its own clean, independently-buildable repo. This was later superseded on both counts: the project moved to a **monorepo** (see Appendix A, 1.1), and deployment itself was declined entirely (Part 23) — the app runs locally only. **Trade-off (as originally reasoned):** two repos meant syncing their contracts manually (this document is what kept them in sync), while a monorepo would have been simpler to clone and version together but complicated two independent deployments — moot now that there's nothing to deploy. Historical rationale kept here for the record; put a link to the *other* repo at the top of each README so a reviewer can find both.
 
 ## 22. Version control & GitHub (step by step)
 
@@ -827,45 +826,17 @@ git push -u origin main
 Repeat for the frontend repo. After the first push, the normal loop is `git add -A && git commit -m "…" && git push`.
 
 **README requirements (both repos — evaluated cold, M4E2).** Each README must let another developer run it without help. Minimum sections:
-- One-line description + link to the sibling repo (and the live URLs once deployed).
+- One-line description + link to the sibling repo.
 - **Prerequisites** (Python 3.11+ / Node 18+).
 - **Setup**: clone, create venv / `npm install`, copy `.env.example` → `.env` and fill the key.
 - **Run**: exact commands (`uvicorn main:app --reload` / `npm run dev`).
 - **Try it**: a sample request (a `curl` for the backend; the URL for the frontend) and the expected JSON.
-- **Deploy**: the Render/Vercel notes from Part 23.
+- **Deploy**: not applicable — see Part 23.
 After writing it, **follow it on a fresh clone** — if it doesn't work cold, it fails M4E2.
 
-## 23. Deployment — Render (backend) + Vercel (frontend)
+## 23. Deployment (not applicable — runs locally only)
 
-Deploy the **backend first** (you need its URL for the frontend), then the frontend, then update backend CORS.
-
-**Step 1 — Backend → Render.**
-1. Push the backend repo to GitHub (Part 22).
-2. On Render: **New → Web Service**, connect the backend repo.
-3. Settings:
-   - **Build command:** `pip install -r requirements.txt`
-   - **Start command:** `uvicorn main:app --host 0.0.0.0 --port $PORT`
-   - **Environment variables:** `ANTHROPIC_API_KEY` (or `OPENAI_API_KEY`), `LLM_MODEL`, and `ALLOWED_ORIGINS` (temporarily `http://localhost:3000`; you'll add the Vercel URL in Step 3).
-4. Deploy. Render gives you a URL like `https://smart-ticket-router-backend.onrender.com`. Verify `GET /health` returns `{"status":"ok"}`.
-
-> **Free-tier gotcha:** Render's free web service **spins down when idle**, so the first request after a pause can take 30–60s (cold start). Before a demo, hit `/health` once to warm it up.
-
-**Step 2 — Frontend → Vercel.**
-1. Push the frontend repo to GitHub.
-2. On Vercel: **Add New → Project**, import the frontend repo (Vercel auto-detects Next.js).
-3. **Environment variable:** `NEXT_PUBLIC_API_URL = https://smart-ticket-router-backend.onrender.com` (your Render URL, no trailing slash).
-4. Deploy. Vercel gives you a URL like `https://smart-ticket-router.vercel.app`.
-
-**Step 3 — Connect them (CORS).**
-1. Back on Render, set `ALLOWED_ORIGINS` to include your Vercel URL (comma-separate if you keep localhost too, e.g. `http://localhost:3000,https://smart-ticket-router.vercel.app`).
-2. Redeploy the backend so the new CORS setting takes effect.
-3. Open the Vercel URL, route a ticket, confirm cards render. If the browser console shows a CORS error, the origin in `ALLOWED_ORIGINS` doesn't exactly match the Vercel URL.
-
-**Deployment sanity checklist:**
-- `curl -X POST https://<render-url>/route -H "Content-Type: application/json" -d '{"ticket":"I was double charged"}'` returns `{ "issues": [...], "processing_time_ms": ... }`.
-- The Vercel site loads, routes a ticket, shows cards + JSON toggle + processing time.
-- No API key is visible in the frontend bundle (it must only ever be on the backend).
-- Both READMEs list the live URLs.
+Not deployed. Deployment (Render for the backend, Vercel for the frontend) was considered and explicitly declined as out of scope for this MVP — the app runs locally only, with no host and no live URL. To run it, see the local run instructions in Part 17 (backend, `uvicorn`) and Part 18 (frontend, `npm run dev`).
 
 ---
 
@@ -925,7 +896,7 @@ Plus 2–3 **multi-issue** rows with `expected_issue_count`, e.g.: *"I was doubl
 
 > Rows 1–3 (same category, three priorities) and 19–20 (vague/angry edge cases) are your strongest talking points — they prove priority is impact-driven and tone-independent.
 
-**Suggested 2-week commit arc (M4D3):** Day 1–2 skeleton + taxonomy + schema · Day 3 redact.py · Day 4–5 prompts + llm_client + first single-issue route · Day 6 multi-issue + validation + id/team assembly · Day 7 repair loop + fallback + FastAPI + timing · Day 8 summarization branch + edge cases · Day 9–10 frontend composer + cards + empty handling · Day 11 animation + JSON toggle + processing-time UI · Day 12 sample tickets + batch runner + before/after · Day 13 READMEs + deploy to Render/Vercel · Day 14 end-to-end dry run.
+**Suggested 2-week commit arc (M4D3):** Day 1–2 skeleton + taxonomy + schema · Day 3 redact.py · Day 4–5 prompts + llm_client + first single-issue route · Day 6 multi-issue + validation + id/team assembly · Day 7 repair loop + fallback + FastAPI + timing · Day 8 summarization branch + edge cases · Day 9–10 frontend composer + cards + empty handling · Day 11 animation + JSON toggle + processing-time UI · Day 12 sample tickets + batch runner + before/after · Day 13 READMEs (deployment considered, deferred/declined — Part 23) · Day 14 end-to-end dry run.
 
 ## 25. Before/after time comparison (M4S7)
 
@@ -953,7 +924,7 @@ Honest caveat: issues routed to Human Triage still need a person, so the real-wo
 | Consistency | **temperature 0** + enums | Higher temp | Stable routing decisions |
 | PII | **Regex** redaction | DLP/NER service | Right level for MVP; no dependency |
 | Model size | **Small, fast** model | Frontier model | Classification doesn't need frontier; cheaper/faster |
-| Repos | **Two** (FE/BE) | Monorepo | Clean, independent deploys to Vercel/Render |
+| Repos | **Two** (FE/BE) | Monorepo | Originally reasoned as clean, independent deploys to Vercel/Render — superseded (Appendix A 1.1: monorepo chosen; deployment itself later declined) |
 | `confidence` | **Omitted** (roadmap) | Include now | Keeps the contract minimal; not required |
 
 ### Architecture Decision Records (ADRs)
@@ -961,10 +932,10 @@ Honest caveat: issues routed to Human Triage still need a person, so the real-wo
 The table above is the quick reference; these are the eight decisions a mentor is most likely to probe, written as short records you can speak to.
 
 **ADR-001 — Why FastAPI (backend framework)?**
-FastAPI gives typed request/response models via Pydantic (which we already need for the JSON contract), automatic validation, and near-zero boilerplate for a single JSON endpoint. It's async-ready for the LLM calls, has first-class docs, and deploys trivially to Render with uvicorn. Flask would also work but would mean bolting validation on separately; Django is far too heavy for one endpoint.
+FastAPI gives typed request/response models via Pydantic (which we already need for the JSON contract), automatic validation, and near-zero boilerplate for a single JSON endpoint. It's async-ready for the LLM calls, has first-class docs, and runs trivially with uvicorn (locally — see Part 23). Flask would also work but would mean bolting validation on separately; Django is far too heavy for one endpoint.
 
 **ADR-002 — Why Next.js (frontend framework)?**
-The mentor asked for a React/Next.js UI that looks genuinely good. Next.js gives a batteries-included React setup (routing, build, env handling), pairs cleanly with Tailwind for a polished look, and deploys to Vercel in one click. A plain Vite + React SPA is an acceptable lighter alternative; we chose Next.js for the smoother deploy and polish.
+The mentor asked for a React/Next.js UI that looks genuinely good. Next.js gives a batteries-included React setup (routing, build, env handling) and pairs cleanly with Tailwind for a polished look. A plain Vite + React SPA is an acceptable lighter alternative; we chose Next.js for the smoother DX and polish (its one-click deploy path was a factor when deployment was still on the table — see Part 23 — but is moot now).
 
 **ADR-003 — Why few-shot prompting?**
 There is no historical dataset and no fine-tuning budget, so in-prompt examples are the only way to teach the model our specific taxonomy and priority rubric. Six to eight carefully chosen examples (covering every team plus the edge and multi-issue cases) calibrate classification far more than prompt wording alone. Zero-shot gets the JSON shape but drifts on our categories; fine-tuning is out of scope with no data.
@@ -982,7 +953,7 @@ Category→team is a fixed business rule, not a judgement call. If the model pro
 Chunking a long ticket and routing each chunk fragments a single problem into partial, duplicated, or contradictory issues and requires messy merging. A single summarization pass preserves every distinct problem and urgency signal, then our normal multi-issue detection splits by *real* independent problems rather than arbitrary text boundaries. Truncation was rejected outright because the key sentence often sits at the end of a rambling message. The cost is one extra LLM call for long tickets only.
 
 **ADR-008 — Why a stateless MVP?**
-Statelessness keeps the system simple, horizontally scalable, and easy to reason about: every request is independent, there's no session or shared mutable state, and a failure affects only that one request. It also makes the two-tier deploy (Render + Vercel) trivial. State (history, analytics, user accounts) is deliberately deferred to the roadmap, where it can be added behind the same stable contract.
+Statelessness keeps the system simple, horizontally scalable, and easy to reason about: every request is independent, there's no session or shared mutable state, and a failure affects only that one request. It would also have made a two-tier deploy (Render + Vercel) trivial, had one been pursued (Part 23). State (history, analytics, user accounts) is deliberately deferred to the roadmap, where it can be added behind the same stable contract.
 
 ## 27. Limitations & "what I'd do differently"
 
@@ -1016,7 +987,7 @@ Statelessness keeps the system simple, horizontally scalable, and easy to reason
 
 **Integration Quality (18%)** · B1 consistency → temp 0 + enums · B2 edge cases → empty (frontend), long (summarize), PII (redaction), multi-issue; multi-language out of scope · B3 API failure → bad key → graceful fallback, no crash · B4 usable output → issue cards + JSON toggle · B5 no secrets → `.env`/`.gitignore`/host env vars + PII redaction.
 
-**Problem Solution Fit (14%)** · C1 solves it → route real tickets live · C2 non-technical operable → example chips, one-click · C3 format fits → clean web app for support ops · C4 complete scope → text in → cards + JSON + time, deployed end to end.
+**Problem Solution Fit (14%)** · C1 solves it → route real tickets live (locally) · C2 non-technical operable → example chips, one-click · C3 format fits → clean web app for support ops · C4 complete scope → text in → cards + JSON + time, running end to end (deployment explicitly out of scope, Part 23).
 
 **Learning (11%)** · D1 hardest → e.g. tone-independent priority · D2 what I'd change → Part 27 · D3 commits → 2-week spread (Part 24) · D4 least confident → e.g. taxonomy on unseen tickets · D5 beyond the brief → taxonomy design, multi-issue, PII, summarize-don't-truncate, repair loop.
 
@@ -1037,7 +1008,7 @@ Statelessness keeps the system simple, horizontally scalable, and easy to reason
 ## 31. Demo script (~7–8 minutes)
 
 1. **(30s) Problem** — the Tier-1 lead story.
-2. **(1m) The app** — open the deployed Vercel URL; paste an example chip; watch the card settle; point out the processing time.
+2. **(1m) The app** — open `http://localhost:3000`; paste an example chip; watch the card settle; point out the processing time.
 3. **(1.5m) Clean routing** — a High security ticket, a Medium single-user login, a Low feature request — different teams, colour-coded.
 4. **(1.5m) Headline feature** — paste the multi-issue example → **three cards**; expand **View Structured JSON** to show the exact contract.
 5. **(1.5m) Edge cases** — angry, vague, ambiguous; a ticket with an email + card number to show **redaction**; a >300-word paste to show **summarization** (higher time); empty box to show the frontend guard.
@@ -1045,7 +1016,7 @@ Statelessness keeps the system simple, horizontally scalable, and easy to reason
 7. **(1m) Evidence** — run the batch runner ("all valid, counts correct"); show the before/after table + live processing time.
 8. **(30s) Honesty** — one limitation + point at the roadmap.
 
-> Warm up the Render backend (hit `/health`) right before you start so there's no cold-start pause.
+> Make sure both `uvicorn` (backend) and `npm run dev` (frontend) are already running before the demo — there's no hosted instance to fall back on.
 
 ## 32. Presentation / slide outline
 
@@ -1061,7 +1032,7 @@ A tight deck a mentor/senior will respect:
 9. **Reliability** — repair loop, fallback, temp-0 consistency (Part 15).
 10. **Speed** — before/after table + live processing time (Parts 16 & 25).
 11. **The UI** — screenshots: cards + JSON toggle (Part 18).
-12. **Deployment** — Render + Vercel, two repos, live URLs (Parts 21–23).
+12. **Repos & deployment** — two repos (Parts 21–22); deployment considered and declined, runs locally only (Part 23).
 13. **What's next** — the roadmap (Part 28).
 14. **What I learned** — hardest part, what I'd change (Part 27).
 
@@ -1076,7 +1047,7 @@ A tight deck a mentor/senior will respect:
 - **PII redaction** — replacing personal data with placeholders before the LLM sees it.
 - **Summarization prefilter** — condensing an over-long ticket (one LLM call) before routing.
 - **Temperature** — randomness knob; 0 = most deterministic.
-- **CORS** — the rule letting your Vercel frontend call your Render backend.
+- **CORS** — the rule letting the frontend (`http://localhost:3000`) call the backend; the only origin allowed, since nothing is deployed.
 
 ---
 
@@ -1090,6 +1061,7 @@ A tight deck a mentor/senior will respect:
 | **1.0 (this doc)** | Final response contract `{issues:[...]}` (same shape single/multiple); backend-generated ids; final 9-category taxonomy + team mapping; priority = business impact, independent of category; LLM-vs-backend responsibility split; end-to-end processing-time measurement shown in CLI + frontend; issue cards + collapsible "View Structured JSON" as the frontend presentation; two repos + Render/Vercel deployment. |
 | **1.1 (implementation deltas)** | Monorepo, not two repos. LLM: OpenAI `gpt-4o-mini`. Frontend palette overridden to colorful/vibrant per stakeholder ask (Part 18 specified scarce color). Added: light/dark theme toggle (`localStorage`-persisted) and a simulated staged-progress loading indicator (no real token-streaming — output is structured JSON, not streamable prose). |
 | **1.2 (mentor review)** | Added internal-only `confidence` field per issue (backend/CLI debug output only, never in the API response — see `backend/schema.py`). Frontend redesigned: "The Verdict Desk" (colorful glass-card, centered layout) replaced by "Dispatch Slip" (split-screen: real Three.js glass-shard rig reacting to live routing state + a paper-slip panel, priority-only color, no per-category icons) — mentor feedback called v1 generic/"AI-developed"; see `frontend/CLAUDE.md` for the full design rationale. `three` added as a real dependency. Bounded OpenAI calls with a 20s client timeout. |
+| **1.3 (deployment decision)** | Deployment (Render for the backend, Vercel for the frontend) was considered and **explicitly declined** — decided out of scope for this MVP. The app runs **locally only**: no host, no live URL (see Part 23). |
 
 # Appendix B — Starter `CLAUDE.md`
 
