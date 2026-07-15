@@ -432,7 +432,7 @@ All 9 categories are covered at least once across the full 17; Authentication, T
 
 Three layers of enforcement, weakest to strongest.
 
-**Layer 1 — provider structured output.** Use the provider's native mechanism (Anthropic tool use with an `input_schema`, or OpenAI `response_format`/function-calling). Use a **small, fast model** — this is classification, not frontier reasoning. Read the current model id from the provider docs; don't hardcode a name from a blog post.
+**Layer 1 — provider structured output.** OpenAI's JSON mode (`response_format: {"type": "json_object"}`), via `gpt-4o-mini` — a **small, fast model**, since this is classification, not frontier reasoning.
 
 **Layer 2 — Pydantic validation with enums (the real enforcement):**
 ```python
@@ -468,13 +468,10 @@ class IssueClassification(BaseModel):
 
 class RoutingModelOutput(BaseModel):
     issues: list[IssueClassification] = Field(min_length=1)
-
-# The FINAL per-issue object the API returns (id + team added by backend, confidence dropped)
-class Issue(IssueClassification):
-    id: int
-    assigned_team: str
 ```
-Because the enums are closed sets, an invented category or a lowercase `high` **fails validation** rather than silently poisoning data. `confidence` is the model's self-reported certainty (0.0–1.0) — it flows through validation but the backend strips it before assembling the response (`router.py`'s `_assemble()`); it only ever surfaces in backend/CLI debug output.
+Because the enums are closed sets, an invented category or a lowercase `high` **fails validation** rather than silently poisoning data. `confidence` is the model's self-reported certainty (0.0–1.0) — it flows through validation but the backend strips it before assembling the response; it only ever surfaces in backend/CLI debug output.
+
+The final per-issue object the API returns (`id` + `assigned_team` added, `confidence` dropped) is a **plain dict built in `router._assemble()`**, not a separate Pydantic model — there is no `Issue`/`RouteResponse` class. `main.py`'s `/route` handler has no `response_model`, so FastAPI just serializes that dict directly. The contract is held by the tests (`tests/test_router.py`) and by `lib/types.ts` on the frontend side, not by a Pydantic model on the way out.
 
 **Layer 3 — the category→team lookup adds `assigned_team` in code:**
 ```python
