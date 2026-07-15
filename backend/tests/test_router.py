@@ -8,7 +8,14 @@ import pytest
 
 from src.router import route_ticket
 
-REQUIRED_FIELDS = {"id", "category", "priority", "assigned_team", "is_ticket", "reasoning"}
+REQUIRED_FIELDS = {
+    "id",
+    "category",
+    "priority",
+    "assigned_team",
+    "is_ticket",
+    "reasoning",
+}
 SAMPLE_TICKETS_PATH = Path(__file__).parent.parent / "data" / "sample_tickets.json"
 TICKETS = json.loads(SAMPLE_TICKETS_PATH.read_text())
 
