@@ -34,16 +34,3 @@ class IssueClassification(BaseModel):
 
 class RoutingModelOutput(BaseModel):
     issues: list[IssueClassification] = Field(min_length=1)
-
-
-class Issue(IssueClassification):
-    """The final per-issue object the API returns. Inherits `confidence` in
-    type but `router._assemble()` never populates it here in practice."""
-
-    id: int
-    assigned_team: str
-
-
-class RouteResponse(BaseModel):
-    issues: list[Issue] = Field(min_length=1)
-    processing_time_ms: int
