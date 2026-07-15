@@ -718,7 +718,7 @@ frontend/
 ├── lib/
 │   ├── api.ts                 # fetch wrapper, reads NEXT_PUBLIC_API_URL
 │   └── types.ts               # Issue, RouteResponse
-└── public/
+└── package-lock.json
 ```
 
 **Design direction — "Pipeline" (current, third design iteration).** An ops-console layout: a three-column grid mirroring the actual request flow — inbound ticket composer + sample tickets on the left, an animated `redact → classify → validate` pipeline-stage indicator in the middle, and the "team lanes" results column with the raw-JSON bar on the right. Earlier iterations ("The Verdict Desk" — centered colorful glass cards; "Dispatch Slip" — split-screen paper slip + a real Three.js glass-shard rig) were both fully replaced, not layered on top of; there is no glass-card or Three.js code in the current app.
