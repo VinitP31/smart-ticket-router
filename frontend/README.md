@@ -37,7 +37,8 @@ Opens at `http://localhost:3000`.
 2. Click **Route ticket →** (or ⌘/Ctrl+Enter). The pipeline stage boxes in the middle column
    animate `redact → classify → validate` while the request is in flight.
 3. Read the card(s) in the "Team lanes" column on the right — one per detected issue, each
-   showing the assigned team, category, and a priority pill (High/Medium/Low).
+   showing the assigned team, category, and a priority pill (High/Medium/Low). A dashed
+   flow line connects the pipeline to each card, colored by that issue's priority.
 4. Click the **Raw JSON response** bar at the bottom to see the exact backend response,
    verbatim.
 5. Toggle light/dark mode with the button (top right) — persists across reloads.

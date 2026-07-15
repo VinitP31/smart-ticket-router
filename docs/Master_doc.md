@@ -711,6 +711,7 @@ frontend/
 │   ├── TicketComposer.tsx     # ticket card, textarea, submit (disabled if empty)
 │   ├── SampleTickets.tsx      # sample-ticket cards, incl. one multi-issue example
 │   ├── RoutingProgress.tsx    # animated redact → classify → validate pipeline stages
+│   ├── FlowLines.tsx          # DOM-measured connector lines, ticket → each team-lane card
 │   ├── IssueCard.tsx          # one "team lane" card per issue
 │   ├── JsonToggle.tsx         # always-visible raw-JSON bar
 │   ├── ProcessingTime.tsx     # "routed in 1.18s"
@@ -724,7 +725,7 @@ frontend/
 **Design direction — "Pipeline" (current, third design iteration).** An ops-console layout: a three-column grid mirroring the actual request flow — inbound ticket composer + sample tickets on the left, an animated `redact → classify → validate` pipeline-stage indicator in the middle, and the "team lanes" results column with the raw-JSON bar on the right. Earlier iterations ("The Verdict Desk" — centered colorful glass cards; "Dispatch Slip" — split-screen paper slip + a real Three.js glass-shard rig) were both fully replaced, not layered on top of; there is no glass-card or Three.js code in the current app.
 
 - **Palette:** indigo/blue accent on a light or dark neutral ground (CSS-custom-property tokens, swapped via a `.dark` class — Tailwind v4 CSS-native theming, no `tailwind.config`); priority still reads via colour (High/Medium/Low) on each team-lane card's left stripe.
-- **Background:** a dot-grid plus animated dashed SVG "flow lines" (`.flow-lines` in `globals.css`), suggesting live data movement behind the three columns.
+- **Background:** a dot-grid plus animated dashed SVG "flow lines" (`FlowLines.tsx` + `.flow-path` in `globals.css`). One line per resulting issue, each drawn to the *real measured position* of its team-lane card (`getBoundingClientRect`, recomputed on resize) and tinted by that issue's priority — not a fixed decorative fan, so a single-issue ticket draws one line and a 3-issue ticket's lines land exactly on each of the 3 cards. Before a result exists, lines fall back to splitting the placeholder box evenly. Rendered behind the pipeline/card boxes (`relative` stacking so DOM order wins over the absolutely-positioned SVG).
 - **Type:** a clean UI face throughout; the category/team name is the hero of each result card, not a separate display face.
 - **Layout:** `TicketComposer` + `SampleTickets` (left) → `RoutingProgress` pipeline-stage boxes (middle, idle → running → done) → `IssueCard` team lanes + `JsonToggle` (right).
 - **Rendering the list:** map over `issues`, render one `<IssueCard>` per issue, **`key={issue.id}`** — never the array index.
